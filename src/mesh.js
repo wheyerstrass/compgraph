@@ -125,6 +125,7 @@ export default {
         gl.uniformMatrix4fv(rota_loc, false, matrix.rotation(rota))
       },
       draw: function() {
+        gl.useProgram(prog)
         gl.drawArrays(gl.TRIANGLES, 0, 6*6)
       }
     }
@@ -169,9 +170,6 @@ export default {
     gl.enableVertexAttribArray(nor_loc)
     gl.vertexAttribPointer(nor_loc, 3, gl.FLOAT, false, 0, 3*4*6)
 
-    //    let pos = [0, -1, -10]
-    //    let rota = [1, 0, 0, 0]
-    //
     return {
       pos,
       rota,
@@ -181,6 +179,7 @@ export default {
         gl.uniformMatrix4fv(rota_loc, false, matrix.rotation(rota))
       },
       draw: function() {
+        gl.useProgram(prog)
         gl.drawArrays(gl.TRIANGLES, 0, 6*1)
       }
     }
@@ -222,6 +221,7 @@ export default {
         gl.uniformMatrix4fv(rota_loc, false, matrix.rotation(rota))
       },
       draw: function() {
+        gl.useProgram(prog)
         gl.drawArrays(gl.TRIANGLES, 0, 6*1)
       }
     }

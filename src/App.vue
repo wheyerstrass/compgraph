@@ -35,7 +35,7 @@ out vec3 vert_nor;
 
 void main() {
   mat4 M = obj_trans*obj_rota;
-  mat4 V = cam_trans*cam_rota;
+  mat4 V = cam_rota*cam_trans;
   mat4 VM = V * M;
   vert_nor = (VM * vec4(nor, 0.0)).xyz;
   vert_pos = (VM * vec4(pos, 1.0)).xyz;
@@ -78,11 +78,11 @@ void main() {
   float Ia = 0.2;
 
   // diffuse (lambert)
-  float Id = 0.5* max( dot(nl, nn), 0.0 );
+  float Id = 0.2* max( dot(nl, nn), 0.0 );
 
   // specular (blinn-phong)
   float rv = dot(nn, normalize(nl+np));
-  float Is = 0.8* pow(rv, 4.);
+  float Is = 0.9* pow(rv, 4.);
 
   // sum
   float c = Ia+Id+Is;
@@ -96,7 +96,7 @@ void main() {
 
 import camera from "@/cam.js"
 import meshes from "@/mesh.js"
-import webgl from "@/webgl.js"
+import shader from "@/shader.js"
 
 export default {
   name: 'home',
@@ -131,9 +131,7 @@ export default {
 
     /*
      */
-    let vertShader = webgl.shader(gl, gl.VERTEX_SHADER, vertSrc)
-    let fragShader = webgl.shader(gl, gl.FRAGMENT_SHADER, fragSrc)
-    let prog = webgl.shaderProg(gl, vertShader, fragShader, [
+    const prog = shader.prog(gl, vertSrc, fragSrc, [
       "time", "P", "cam_trans", "cam_rota", "obj_trans", "obj_rota"
     ])
 
@@ -183,10 +181,11 @@ export default {
     for(let i=0; i<50; ++i) {
       let size = rnd(1, 50)
       let pos = [20*rnd(-size, size), 0.5*size, -20*size]
-      objs.push(meshes.cubeOut(gl, prog.id, Math.pow(size,1.5), pos, [0, 1, 0, 45]))
+      objs.push(
+        meshes.cubeOut(gl, prog.id, Math.pow(size,1.5), pos, [0, 1, 0, 45])
+      )
     }
 
-    gl.useProgram(prog.id)
     function renderLoop(ts) {
       gl.clear(gl.COLOR_BUFFER_BIT || gl.DEPTH_BUFFER_BIT)
 
@@ -209,7 +208,6 @@ export default {
           rota_loc: prog.locs["obj_rota"]
         }
         let obj = objs[i]
-        //console.log(ctx)
         obj.preDraw(ctx)
         obj.draw()
       }
