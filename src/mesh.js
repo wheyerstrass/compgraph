@@ -185,7 +185,7 @@ export default {
     }
   },
 
-  billboard: function(gl, prog, size, pos, rota) {
+  quad: function(gl, prog, size, pos, rota) {
     gl.useProgram(prog)
     /*
      * data */
@@ -199,6 +199,13 @@ export default {
        l,  l, 0,
       -l,  l, 0,
       -l, -l, 0,
+      // uv
+       1,  1,
+       0,  0,
+       1,  0,
+       1,  1,
+       0,  1, 
+       0,  0,
     ]
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vbuffer), gl.STATIC_DRAW)
 
@@ -211,6 +218,11 @@ export default {
     const pos_loc = gl.getAttribLocation(prog, "pos")
     gl.enableVertexAttribArray(pos_loc)
     gl.vertexAttribPointer(pos_loc, 3, gl.FLOAT, false, 0, 0)
+    /* 
+     * pass uv to shader */
+    const uv_loc = gl.getAttribLocation(prog, "uv")
+    gl.enableVertexAttribArray(uv_loc)
+    gl.vertexAttribPointer(uv_loc, 2, gl.FLOAT, false, 0, 3*4*6)
 
     return {
       pos,

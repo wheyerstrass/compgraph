@@ -8,109 +8,40 @@
 </template>
 
 <script>
-const w = 1024
-const h = 768
+const texture = function(gl, url, texunit, mipmap=false) {
+  let id = gl.createTexture()
+  gl.activeTexture(gl.TEXTURE0+texunit)
+  gl.bindTexture(gl.TEXTURE_2D, id)
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, 
+    new Uint8Array([0,0,255,255]))
 
-const s = {r: 0.8, g: 0.9, b: 1.0}
-const f = {min: 0, max: 1000.0}
-
-const vertSrc = `#version 300 es
-
-precision mediump float;
-
-in vec3 pos;
-in vec3 nor;
-
-uniform float time;
-
-uniform mat4 P;
-uniform mat4 cam_trans;
-uniform mat4 cam_rota;
-
-uniform mat4 obj_trans;
-uniform mat4 obj_rota;
-
-out vec3 vert_pos;
-out vec3 vert_nor;
-
-void main() {
-  mat4 M = obj_trans*obj_rota;
-  mat4 V = cam_rota*cam_trans;
-  mat4 VM = V * M;
-  vert_nor = (VM * vec4(nor, 0.0)).xyz;
-  vert_pos = (VM * vec4(pos, 1.0)).xyz;
-  gl_Position = P * vec4(vert_pos, 1.0);
+  let img = new Image()
+  img.src = url
+  img.addEventListener("load", function() {
+    gl.bindTexture(gl.TEXTURE_2D, id)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
+    if(mipmap)
+      gl.generateMipmap(gl.TEXTURE_2D)
+  })
+  return {id,img}
 }
-`
-
-const fragSrc = `#version 300 es
-
-precision mediump float;
-
-uniform float time;
-
-uniform mat4 P;
-uniform mat4 cam_trans;
-uniform mat4 cam_rota;
-
-uniform mat4 obj_trans;
-uniform mat4 obj_rota;
-
-in vec3 vert_pos;
-in vec3 vert_nor;
-
-out vec4 color;
-
-const vec3 s = vec3(${s.r}, ${s.g}, ${s.b});
-const vec2 fogr = vec2(${f.min}, ${f.max});
-
-void main() {
-
-  vec4 light = vec4(0., 5., -5., 1);
-  light = cam_rota*light;
-  //light = cam_trans*cam_rota*light;
-
-  vec3 nl = normalize(light.xyz-vert_pos);
-  vec3 nn = normalize(vert_nor);
-  vec3 np = normalize(vert_pos);
-
-  // ambient
-  float Ia = 0.2;
-
-  // diffuse (lambert)
-  float Id = 0.2* max( dot(nl, nn), 0.0 );
-
-  // specular (blinn-phong)
-  float rv = dot(nn, normalize(nl+np));
-  float Is = 0.9* pow(rv, 4.);
-
-  // sum
-  float c = Ia+Id+Is;
-  float f = (length(vert_pos.z)-fogr.x)/(fogr.y - fogr.x);
-  f = clamp(f, 0., 1.);
-  //color = vec4(c*vert_nor.r, c*vert_nor.g, c*vert_nor.b, 1.0);
-  vec3 col = mix(vec3(c,c,c), s, f);
-  color = vec4(col, 1.0);
-}
-`
 
 import camera from "@/cam.js"
 import meshes from "@/mesh.js"
 import shader from "@/shader.js"
 
+//import phong from "@/phong-fog.glsl.js"
+import nmap from "@/normal-mapping.glsl.js"
+
 export default {
   name: 'home',
   data() {
-    return { w, h }
+    return { w: 1024, h: 768 }
   },
   computed: {
     canvasId() { return `canvas-${Date.now()}` }
   },
   methods: {
-    keypress(obj) {
-      console.log(obj)
-      console.log("asd")
-    }
   },
   beforeDestroy() {
     //window.removeEventListener("keydown")
@@ -122,22 +53,17 @@ export default {
       console.error("Keine WebGL 2 Unterstützung")
       return
     }
+    const fog = { r: 0.9, g: 0.9, b: 0.9, min: 0, max: 1000 }
     /*
      * settings */
     gl.enable(gl.DEPTH_TEST)
     gl.enable(gl.CULL_FACE)
     gl.viewport(0, 0, this.w, this.h)
-    gl.clearColor(s.r, s.g, s.b, 1)
-
-    /*
-     */
-    const prog = shader.prog(gl, vertSrc, fragSrc, [
-      "time", "P", "cam_trans", "cam_rota", "obj_trans", "obj_rota"
-    ])
+    gl.clearColor(fog.r, fog.g, fog.b, 1)
 
     /*
      * cam */
-    let cam = camera(gl, w/h, 0.1, 1000, [0,-10,0], [0,1,0,0])
+    let cam = camera(gl, this.w/this.h, 0.1, 1000, [0,0,0], [0,1,0,0])
     const cs = -1
     window.addEventListener("keydown", function(e) {
       switch(e.key) {
@@ -168,23 +94,40 @@ export default {
       }
     })
 
+    /*
+     * shader program
+     */
+    //const prog = shader.prog(gl, phong.vert(), phong.frag(fog), [
+    //  "time", "P", "cam_trans", "cam_rota", "obj_trans", "obj_rota"
+    //])
+    const prog = shader.prog(gl, nmap.vert(), nmap.frag(fog), [
+      "time", "P", "cam_trans", "cam_rota", "obj_trans", "obj_rota",
+      "samp_col", "samp_nor"
+    ])
+
 
     /*
-     * objects */
-    let plane = meshes.plane(gl, prog.id, 4000, [0,0,0], [1,0,0,0])
-    let cube = meshes.cubeOut(gl, prog.id, 1, [-2,1,-12], [1,0,0,0])
-    let objs = [cube, plane] 
-    const rnd = (min, max) => {
-      const r = Math.random()
-      return min*(1-r) + max*r
-    }
-    for(let i=0; i<50; ++i) {
-      let size = rnd(1, 50)
-      let pos = [20*rnd(-size, size), 0.5*size, -20*size]
-      objs.push(
-        meshes.cubeOut(gl, prog.id, Math.pow(size,1.5), pos, [0, 1, 0, 45])
-      )
-    }
+     * objects 
+     */
+    //let plane = meshes.plane(gl, prog.id, 4000, [0,0,0], [1,0,0,0])
+    //let cube = meshes.cubeOut(gl, prog.id, 1, [-2,1,-12], [1,0,0,0])
+    //let objs = [cube, plane] 
+    //const rnd = (min, max) => {
+    //  const r = Math.random()
+    //  return min*(1-r) + max*r
+    //}
+    //for(let i=0; i<50; ++i) {
+    //  let size = rnd(1, 50)
+    //  let pos = [20*rnd(-size, size), 0.5*size, -20*size]
+    //  objs.push(
+    //    meshes.cubeOut(gl, prog.id, Math.pow(size,1.5), pos, [0, 1, 0, 45])
+    //  )
+    //}
+    let objs = [meshes.quad(gl, prog.id, 100, [0,0,-50], [1,0,0,0])]
+    texture(gl, "3.jpg", 0, true)
+    gl.uniform1i(prog.locs["samp_col"], 0)
+    texture(gl, "3.nm.jpg", 1, true)
+    gl.uniform1i(prog.locs["samp_nor"], 1)
 
     function renderLoop(ts) {
       gl.clear(gl.COLOR_BUFFER_BIT || gl.DEPTH_BUFFER_BIT)
@@ -198,8 +141,6 @@ export default {
       cam.pushTranslation(prog.locs["cam_trans"])
       cam.pushRotation(prog.locs["cam_rota"])
 
-      //cam.pos[2] += 0.001
-      cube.rota[3] += 0.5
       /* 
        * push Model */
       for(let i=0; i<objs.length; ++i) {
