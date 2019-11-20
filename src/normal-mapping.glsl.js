@@ -35,6 +35,8 @@ void main() {
 
 precision mediump float;
 
+uniform float time;
+
 uniform mat4 cam_trans;
 uniform mat4 cam_rota;
 
@@ -56,7 +58,7 @@ void phong(in vec3 light, in vec3 vpos, in vec3 vnorm, out float li) {
 
   vec3 nl = normalize(light-vpos);
   vec3 nn = normalize(vnorm);
-  vec3 np = normalize(vpos);
+  vec3 np = normalize(-vpos);
 
   // ambient
   float Ia = 0.2;
@@ -81,7 +83,7 @@ void fog(in vec3 vpos, in vec2 fz, inout vec3 col) {
 
 void main() {
 
-  vec4 light = vec4(0., 100., -100., 1);
+  vec4 light = vec4(100.*cos(0.001*time), 5, 1, 1.);
 
   float li = 0.;
   vec3 vert_nor = 2.*(texture(samp_nor, vert_uv).xyz - vec3(0.5,0.5,0.5));
