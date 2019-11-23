@@ -44,6 +44,10 @@ export default {
       0, 0, (fc+nc)/(nc-fc), -1,
       0, 0, 2*nc*fc/(nc-fc), 0
     ]
+  },
+
+  mult: function(a, b) {
+    return a+b
   }
 
 }
