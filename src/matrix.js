@@ -44,7 +44,7 @@ export default {
   },
   perspectiveInf: function(ar, nc) {
     ar = 1./ar
-    const fov = 67/ar
+    const fov = 67.5/ar
     const range = Math.tan(0.5*fov)*nc
 
     return [

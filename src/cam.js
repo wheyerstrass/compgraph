@@ -32,7 +32,7 @@ export default function(
   }
 
   const fpsControls = function() {
-    const base_vel = 1
+    const base_vel = 2
     window.addEventListener("keydown", function(e) {
       switch(e.key) {
         case "w":
@@ -55,6 +55,7 @@ export default function(
           break
       }
     })
+    let cull = true
     window.addEventListener("keyup", function(e) {
       switch(e.key) {
         case "w":
@@ -75,16 +76,29 @@ export default function(
         case "c":
           vel[1] = 0
           break
+        case "e":
+          if(cull) {
+            cull = false
+            gl.disable(gl.CULL_FACE)
+          } else {
+            cull = true
+            gl.enable(gl.CULL_FACE)
+          }
+          break
       }
     })
     addEventListener("mousemove", ({buttons, movementX, movementY}) => {
       if(buttons !== 1) return
       const x = sign(movementX)
       const y = sign(movementY)
-      squat = quat.mult(squat, quat.q(0.2, ...vec3.scale(x, uvec)))
-      squat = quat.mult(squat, quat.q(0.2, ...vec3.scale(y, rvec)))
+      squat = quat.mult(squat, quat.q(1, ...vec3.scale(x, uvec)))
+      squat = quat.mult(squat, quat.q(1, ...vec3.scale(y, rvec)))
       uv_offset[0] += 0.001*x
       uv_offset[1] += -0.001*y
+    })
+    addEventListener("wheel", ({deltaY}) => {
+      const z = sign(deltaY)
+      squat = quat.mult(squat, quat.q(4, ...vec3.scale(z, fvec)))
     })
   }
 

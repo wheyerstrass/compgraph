@@ -12,12 +12,9 @@ import camera from "@/cam.js"
 import meshes from "@/mesh.js"
 import shader from "@/shader.js"
 
-import phong from "@/phong-fix.glsl.js"
-//import nmap from "@/normal-mapping.glsl.js"
-import hmap from "@/heightmap.glsl.js"
-import sbox from "@/skybox.glsl.js"
-import sunp from "@/sun.glsl.js"
-import debugp from "@/debug.glsl.js"
+import dbp from "@/debug.glsl.js"
+import phong from "@/phong.glsl.js"
+import hullp from "@/dyson-hull.glsl.js"
 import bgp from "@/bg.glsl.js"
 
 export default {
@@ -55,13 +52,13 @@ export default {
     /*
      * cam */
     let cam = camera(gl, this.w/this.h, 0.1, 2000,
-      [0,0,100], // pos
+      [0,0,1000], // pos
       [0,0,0], // vel
       [0,0,1,0], // rota
       [0,0,1,0], // rota_t
       [0,0], // uv_offset
       [1,0,0,0], // quat
-      [0,0,-1], [0,1,0], [1,0,0] // dir vectors
+      [0,0,1], [0,1,0], [1,0,0] // dir vectors
     )
     cam.fpsControls()
 
@@ -69,41 +66,6 @@ export default {
      * shader programs 
      */
 
-    /*
-     * sun */
-    //let sun_prog = shader.prog(gl, sunp.vert(), sunp.frag(), [
-    //  "time", "light",
-    //  "P", "cam_trans", "cam_rota",
-    //  "obj_trans", "obj_rota",
-    //  "samp_col", "samp_nor", "samp_dis"
-    //])
-    //let sun = meshes.quad(gl, sun_prog.id, 250, [0,1200,0], [1,0,0,0])
-    //sun_prog.objs.push(sun)
-    //shader.texture(gl, "glow.png", 3, sun_prog.locs["samp_col"])
-    ///*
-    // * plane */
-    //let plane_prog = shader.prog(gl, phong.vert(), phong.frag(fog), [
-    //  "time", "light",
-    //  "P", "cam_trans", "cam_rota",
-    //  "obj_trans", "obj_rota",
-    //  "samp_col", "samp_nor", "samp_dis"
-    //])
-    //plane_prog.objs.push(
-    //  //meshes.grid(gl, plane_prog.id, 1000, 500, [0,0,0], [1,0,0,0])
-    //)
-    //shader.texture(gl, "hm.png", 0, plane_prog.locs["samp_dis"])
-    //shader.texture(gl, "hm.nm.png", 1, plane_prog.locs["samp_nor"])
-    //shader.texture(gl, "sandHD.jpg", 2, plane_prog.locs["samp_col"])
-    ///*
-    // * plane */
-    //let sphere_prog = shader.prog(gl, debugp.vert(), debugp.frag(fog), [
-    //  "time", "light",
-    //  "P", "cam_trans", "cam_rota",
-    //  "obj_trans", "obj_rota",
-    //  "samp_col", "samp_nor", "samp_dis"
-    //])
-    //let sphere = meshes.sphere(gl, sphere_prog.id, 50, 10, [0,0,0], [0,1,0,0])
-    //sphere_prog.objs.push(sphere)
     /*
      * bg */
     let bg_prog = shader.prog(gl, bgp.vert(), bgp.frag(fog), [
@@ -115,27 +77,42 @@ export default {
     ])
     let bg = meshes.bgquad(gl, bg_prog.id, [0,0,0.5,0.5])
     bg_prog.objs.push(bg)
-    shader.texture(gl, "space2.png", 5, bg_prog.locs["samp_col"])
+    shader.texture(gl, "space2.png", 0, bg_prog.locs["samp_col"])
     /*
-     * cube */
-    let cube_prog = shader.prog(gl, debugp.vert(), debugp.frag(), [
+     * sphere */
+    const phongf = phong(.2,.5,.9)
+    let sphere_prog = shader.prog(gl, hullp.vert(), hullp.frag(phongf), [
       "time", "light",
       "P", "cam_trans", "cam_rota",
       "obj_trans", "obj_rota",
-      "samp_col", "samp_nor", "samp_dis"
+      "samp_col", "samp_norm"
     ])
-    cube_prog.objs.push(meshes.cubeOut(gl, cube_prog.id, 10, [0,0,0], [1,0,0,0]))
-    shader.texture(gl, "cliff.jpg", 6, cube_prog.locs["samp_col"])
+    let sphere = meshes.sphereOut(gl, sphere_prog.id, 500, 5, [0,0,0], [1,0,0,-90])
+    sphere_prog.objs.push(sphere)
+    shader.cubemap_dyson(gl,
+      "img/hull2.png",
+      "img/hull2.bot.png",
+      1, sphere_prog.locs["samp_col"]
+    )
+    let _prog = shader.prog(gl, dbp.vert(), dbp.frag(), [
+      "time", "light",
+      "P", "cam_trans", "cam_rota",
+      "obj_trans", "obj_rota",
+      "samp_col", "samp_norm"
+    ])
+    let tube = meshes.tubeIn(gl, _prog.id, 200, 166, 30, [0,0,370], [1,1,1,0])
+    _prog.objs.push(tube)
 
     let progs = [
-      bg_prog,
-      cube_prog,
-      //plane_prog,
-      //sphere_prog
+      _prog,
+      //bg_prog,
+      sphere_prog
     ]
     function renderLoop(ts) {
       gl.clear(gl.COLOR_BUFFER_BIT || gl.DEPTH_BUFFER_BIT)
 
+      // game logic goes here
+      //tube.rota[3] += 1
       for(let p=0; p<progs.length; ++p) {
         let prog = progs[p]
         gl.useProgram(prog.id)
@@ -144,7 +121,7 @@ export default {
         gl.uniform1f(prog.locs["time"], ts)
         /*
          * push light */
-        //gl.uniform3fv(prog.locs["light"], sun.pos)
+        gl.uniform3fv(prog.locs["light"], [50,0,0])
         /*
          * push cam uniforms */
         cam.pushPerspective(prog.locs["P"])
