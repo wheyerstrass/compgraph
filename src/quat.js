@@ -42,8 +42,47 @@ export default {
     ]
   },
 
-  inv([ ,q1,q2,q3]) {
-    return [-q1, -q2, -q3]
+  inv([q0,q1,q2,q3]) {
+    return [q0, -q1, -q2, -q3]
   },
 
+  dot([q00,q01,q02,q03], [q10,q11,q12,q13]) {
+    return q00*q10 + q01*q11 + q02*q12 + q03*q13
+  },
+
+  slerp(q1, q2, t) {
+    let dot = this.dot(q1, q2)
+
+    let _q1 = [...q1]
+    if(dot < 0) {
+      _q1[0] *= -1
+      _q1[1] *= -1
+      _q1[2] *= -1
+      _q1[3] *= -1
+      dot = this.dot(q1, q2)
+    }
+
+    if(Math.abs(dot) >= 1)
+      return _q1
+
+    const sino = Math.sqrt(1-dot*dot)
+    if(Math.abs(sino) <= 0.001) {
+      return [
+        (1-t)*_q1[0] + t*q2[0],
+        (1-t)*_q1[1] + t*q2[1],
+        (1-t)*_q1[2] + t*q2[2],
+        (1-t)*_q1[3] + t*q2[3],
+      ]
+    }
+
+    const omega = Math.acos(dot)
+    const a = Math.sin((1-t)*omega)
+    const b = Math.sin(t*omega)
+    return [
+      (_q1[0]*a + q2[0]*b) / sino,
+      (_q1[1]*a + q2[1]*b) / sino,
+      (_q1[2]*a + q2[2]*b) / sino,
+      (_q1[3]*a + q2[3]*b) / sino,
+    ]
+  }
 }

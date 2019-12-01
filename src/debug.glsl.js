@@ -7,6 +7,8 @@ precision mediump float;
 in vec3 pos;
 in vec2 uv;
 
+uniform float time;
+
 uniform mat4 P;
 uniform mat4 cam_trans;
 uniform mat4 cam_rota;
@@ -24,6 +26,7 @@ void main() {
 
   vert_uv = uv;
   vert_pos = (VM * vec4(pos, 1.0)).xyz;
+  //vert_pos.y += 0.5*cos(0.001*time);
   gl_Position = P * vec4(vert_pos, 1.0);
 }
 `,
@@ -33,13 +36,16 @@ void main() {
 
 precision mediump float;
 
+in vec2 vert_uv;
 in vec3 vert_pos;
 
-in vec2 vert_uv;
+uniform sampler2D samp_col;
+
 out vec4 color;
 
 void main() {
-  color = vec4(.2,.2,.2,1.0);
+  //color = vec4(0.1,0.1,0.1,1.0);
+  color = texture(samp_col, 0.01*vert_uv);
 }
 `
 }

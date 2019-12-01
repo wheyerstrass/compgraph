@@ -1,138 +1,69 @@
+import math from "@/math.js"
 import matrix from "@/matrix.js"
-import vec3 from "@/vec.js"
+//import vec3 from "@/vec.js"
 import quat from "@/quat.js"
 
-function lint(s, t, a, th) {
-  const diff = (t-s)
-  return (Math.abs(diff) > th) ? a*diff : 0
-}
+const {lint,rad} = math
+const {sin,cos} = Math
+const {perspective, perspectiveInf} = matrix
 
-const {sign} = Math
+export default function(gl, ar, nc, fc=false) {
 
-export default function(
-  gl, ar, nc, fc,
-  pos, vel, // position
-  rota, rota_t, // rotation
-  uv_offset, squat,
-  fvec, uvec, rvec
-) {
+  let cam = {}
 
-  const pushPerspective = function(loc) {
-    gl.uniformMatrix4fv(loc, false, matrix.perspectiveInf(ar,nc,fc))
+  cam.pushPerspective = (fc) ?
+    (loc) => gl.uniformMatrix4fv(loc, false, perspective(ar,nc,fc)) :
+    (loc) => gl.uniformMatrix4fv(loc, false, perspectiveInf(ar,nc))
+
+  cam.pushView = function() {
+    /* needs to call 'fpsControls' or 'orbitControls' first */
   }
 
-  const pushTranslation = function(loc) {
-    const [x,y,z] = pos
-    gl.uniformMatrix4fv(loc, false, matrix.translation([-x,-y,-z]))
+  cam.fpsControls = function(pos=[0,0,0], rota=[1,0,0,0]) {
+    cam.pos = pos
+    cam.rota = rota
+    cam.pushView = function(trans_loc, rota_loc) {
+      const [x,y,z] = cam.pos
+      gl.uniformMatrix4fv(trans_loc, false, matrix.translation([-x,-y,-z]))
+      const mat = quat.mat(cam.rota)
+      gl.uniformMatrix4fv(rota_loc, false, mat)
+    }
   }
 
-  const pushRotation = function(loc) {
-    const mat = quat.mat(squat)
-    gl.uniformMatrix4fv(loc, false, mat)
+  cam.orbitControls = function(targetPos, dist=10, pos=[0,0,0], rota=[0,90]) {
+    cam.dist = dist
+    cam.dist_t = dist
+    pos[0] += targetPos[0]
+    pos[1] += targetPos[1]
+    pos[2] += targetPos[2]
+    cam.pos = pos
+    cam.pos_t = [...pos]
+    cam.rota = rota
+    cam.rota_t = [...rota]
+    cam.up = [0,1,0]
+    cam.update = function() {
+      cam.dist += lint(cam.dist, cam.dist_t, 0.1, 0.1)
+      cam.rota[0] += lint(cam.rota[0], cam.rota_t[0], 0.1, 0.1)
+      cam.rota[1] += lint(cam.rota[1], cam.rota_t[1], 0.1, 0.1)
+      const phi = rad(cam.rota[0])
+      const theta = rad(cam.rota[1])
+      const z = cam.dist*sin(theta)*cos(phi)
+      const x = cam.dist*sin(theta)*sin(phi)
+      const y = cam.dist*cos(theta)
+      cam.pos[0] = targetPos[0] + x
+      cam.pos[1] = targetPos[1] + y
+      cam.pos[2] = targetPos[2] + z
+    }
+    cam.pushView = function(trans_loc, rota_loc) {
+      const [x,y,z] = cam.pos
+      gl.uniformMatrix4fv(trans_loc, false, matrix.translation([-x,-y,-z]))
+      const mat = matrix.lookat(cam.pos, targetPos, cam.up)
+      //cam.up[0] = mat[1]
+      //cam.up[1] = mat[5]
+      //cam.up[2] = mat[9]
+      gl.uniformMatrix4fv(rota_loc, false, mat)
+    }
   }
 
-  const fpsControls = function() {
-    const base_vel = 2
-    window.addEventListener("keydown", function(e) {
-      switch(e.key) {
-        case "w":
-          vel[2] = base_vel
-          break
-        case "s":
-          vel[2] = -base_vel
-          break
-        case "a":
-          vel[0] = -base_vel
-          break
-        case "d":
-          vel[0] = base_vel
-          break
-        case " ":
-          vel[1] = base_vel
-          break
-        case "c":
-          vel[1] = -base_vel
-          break
-      }
-    })
-    let cull = true
-    window.addEventListener("keyup", function(e) {
-      switch(e.key) {
-        case "w":
-          vel[2] = 0
-          break
-        case "s":
-          vel[2] = 0
-          break
-        case "a":
-          vel[0] = 0
-          break
-        case "d":
-          vel[0] = 0
-          break
-        case " ":
-          vel[1] = 0
-          break
-        case "c":
-          vel[1] = 0
-          break
-        case "e":
-          if(cull) {
-            cull = false
-            gl.disable(gl.CULL_FACE)
-          } else {
-            cull = true
-            gl.enable(gl.CULL_FACE)
-          }
-          break
-      }
-    })
-    addEventListener("mousemove", ({buttons, movementX, movementY}) => {
-      if(buttons !== 1) return
-      const x = sign(movementX)
-      const y = sign(movementY)
-      squat = quat.mult(squat, quat.q(1, ...vec3.scale(x, uvec)))
-      squat = quat.mult(squat, quat.q(1, ...vec3.scale(y, rvec)))
-      uv_offset[0] += 0.001*x
-      uv_offset[1] += -0.001*y
-    })
-    addEventListener("wheel", ({deltaY}) => {
-      const z = sign(deltaY)
-      squat = quat.mult(squat, quat.q(4, ...vec3.scale(z, fvec)))
-    })
-  }
-
-  const update = function() {
-    // rotation
-    squat = quat.norm(squat)
-    const rota_mat = quat.mat(squat)
-    uvec = matrix.mult3(rota_mat, [0,1,0])
-    rvec = matrix.mult3(rota_mat, [1,0,0])
-    fvec = matrix.mult3(rota_mat, [0,0,-1])
-    //position
-    pos[0] += lint(pos[0],
-      pos[0] + rvec[0]*vel[0] + uvec[0]*vel[1] + fvec[0]*vel[2],
-      0.1, 0.1
-    )
-    pos[1] += lint(pos[1],
-      pos[1] + rvec[1]*vel[0] + uvec[1]*vel[1] + fvec[1]*vel[2],
-      0.1, 0.1
-    )
-    pos[2] += lint(pos[2],
-      pos[2] + rvec[2]*vel[0] + uvec[2]*vel[1] + fvec[2]*vel[2],
-      0.1, 0.1
-    )
-  }
-
-  return {
-    pos,
-    rota,
-    squat,
-    uv_offset,
-    pushTranslation,
-    pushRotation,
-    pushPerspective,
-    update,
-    fpsControls
-  }
+  return cam
 }

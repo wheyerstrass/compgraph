@@ -6,6 +6,13 @@ function rad(deg) {
 
 export default {
 
+  identity: [
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1
+  ],
+
   translation: function(vec) {
     const [x,y,z] = vec
     return new Float32Array([
@@ -30,9 +37,22 @@ export default {
     ]
   },
 
+  lookat: function(from, at, upvec) {
+    const f = vec3.norm(vec3.diff(at, from))
+    const U = vec3.norm(upvec)
+    const s = vec3.norm(vec3.cross(f, U))
+    const u = vec3.cross(s, f)
+    return [
+      s[0], u[0], -f[0], 0,
+      s[1], u[1], -f[1], 0,
+      s[2], u[2], -f[2], 0,
+      0, 0, 0, 1
+    ]
+  },
+
   perspective: function(ar, nc, fc) {
     ar = 1./ar
-    const fov = 75.0/ar
+    const fov = 67.5/ar
     const range = Math.tan(0.5*fov)*nc
 
     return [
@@ -83,12 +103,12 @@ export default {
     m00, m01, m02, ,
     m10, m11, m12, ,
     m20, m21, m22, ,
-       ,    ,    , ,
+    ,    ,    , ,
   ], [x,y,z, ]) {
     return [
       m00*x + m01*y + m02*z,
       m10*x + m11*y + m12*z,
       m20*x + m21*y + m22*z,
     ]
-  }
+  },
 }
