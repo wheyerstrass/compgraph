@@ -74,8 +74,10 @@ export default {
       "s": () => (ship.vel[2] = -1),
       "a": () => (ship.addRota(-10, ship.up)),
       "d": () => (ship.addRota(10, ship.up)),
-      " ": () => (ship.vel[1] = 1),
-      "c": () => (ship.vel[1] = -1),
+      " ": () => (ship.addRota(-10, ship.right)),
+      "c": () => (ship.addRota(10, ship.right)),
+      "e": () => (ship.addRota(-10, ship.forward)),
+      "q": () => (ship.addRota(10, ship.forward)),
     })
     input.keyup({
       "w": () => (ship.vel[2] = 0),
@@ -103,9 +105,9 @@ export default {
       "time", "light",
       "P", "cam_trans", "cam_rota",
       "obj_trans", "obj_rota",
-      "samp_col", "samp_nor"
+      "samp_col", "samp_nor",
     ])
-    let bg = meshes.bgquad(gl, bg_prog.id, [0,0,0.5,0.5])
+    let bg = meshes.bgquad(gl, bg_prog.id)
     bg_prog.objs.push(bg)
     /*
      * dyson hull */
@@ -204,8 +206,16 @@ export default {
 
     // start once all assets finished loading
     const render =  function() {
-      // load textures
+      // upload textures to gpu
       shader.cubemap(gl, ship_prog.id, 0, ship_prog.locs["samp_col"], {
+        px: assets.get("space_xp"),
+        nx: assets.get("space_xn"),
+        py: assets.get("space_yp"),
+        ny: assets.get("space_yp"),
+        pz: assets.get("space_zp"),
+        nz: assets.get("space_zn"),
+      })
+      shader.cubemap(gl, ship_prog.id, 1, ship_prog.locs["samp_col"], {
         px: assets.get("ship"),
         nx: assets.get("ship"),
         py: assets.get("ship"),
@@ -213,7 +223,7 @@ export default {
         pz: assets.get("ship"),
         nz: assets.get("shipfront"),
       })
-      shader.cubemap(gl, hull_prog.id, 1, hull_prog.locs["samp_col"], {
+      shader.cubemap(gl, hull_prog.id, 2, hull_prog.locs["samp_col"], {
         px: assets.get("hull"),
         nx: assets.get("hull"),
         py: assets.get("hull"),
@@ -221,7 +231,7 @@ export default {
         pz: assets.get("hull"),
         nz: assets.get("hull"),
       })
-      shader.cubemap(gl, int_prog.id, 2, int_prog.locs["samp_col"], {
+      shader.cubemap(gl, int_prog.id, 3, int_prog.locs["samp_col"], {
         px: assets.get("hull"),
         nx: assets.get("hull"),
         py: assets.get("hull"),
@@ -229,10 +239,10 @@ export default {
         pz: assets.get("hull"),
         nz: assets.get("hull"),
       })
-      shader.texture(gl, tube_prog.id, 3, tube_prog.locs["samp_col"],
+      shader.texture(gl, tube_prog.id, 4, tube_prog.locs["samp_col"],
         assets.get("hull")
       )
-      shader.texture(gl, plane_prog.id, 3, plane_prog.locs["samp_col"],
+      shader.texture(gl, plane_prog.id, 5, plane_prog.locs["samp_col"],
         assets.get("hull")
       )
       requestAnimationFrame(renderLoop)
@@ -243,6 +253,12 @@ export default {
     assets.img("grassbot", "img/grass/bot.png", render)
     assets.img("ship", "img/ship/base.png",render)
     assets.img("shipfront", "img/ship/front.png", render)
+
+    assets.img("space_xp", "img/space/xp.jpg", render)
+    assets.img("space_xn", "img/space/xn.jpg", render)
+    assets.img("space_zp", "img/space/zp.jpg", render)
+    assets.img("space_zn", "img/space/zn.jpg", render)
+    assets.img("space_yp", "img/space/yp.jpg", render)
   },
 }
 </script>

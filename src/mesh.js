@@ -12,34 +12,45 @@ export default {
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
     let vb = [
       // bot
-      0, 0, -5,
-      2, 0, 2,
-      -2, 0, 2,
+      0, 0, -8,
+      4, 0, 2,
+      -4, 0, 2,
       // back
-      -2, 0, 2,
-      2, 0, 2,
-      2, 1, 2,
-      -2, 0, 2,
-      2, 1, 2,
-      -2, 1, 2,
+      -4, 0, 2,
+      4, 0, 2,
+      4, 0.5, 2,
+      //
+      -4, 0, 2,
+      4, 0.5, 2,
+      -4, 0.5, 2,
       // left
-      2, 1, 2,
-      2, 0, 2,
-      0, 1, -5,
-      2, 0, 2,
-      0, 0, -5,
-      0, 1, -5,
+      4, 0.5, 2,
+      4, 0, 2,
+      0, 0.5, -8,
+      //
+      4, 0, 2,
+      0, 0, -8,
+      0, 0.5, -8,
       // right
-      -2, 1, 2,
-      0, 1, -5,
-      -2, 0, 2,
-      -2, 0, 2,
-      0, 1, -5,
-      0, 0, -5,
+      -4, 0.5, 2,
+      0, 0.5, -8,
+      -4, 0, 2,
+      //
+      -4, 0, 2,
+      0, 0.5, -8,
+      0, 0, -8,
       // top
-      0, 1, -5,
-      -2, 1, 2,
-      2, 1, 2,
+      0, 0.5, -8,
+      0, 2, 0,
+      4, 0.5, 2,
+      //
+      0, 0.5, -8,
+      -4, 0.5, 2,
+      0, 2, 0,
+      //
+      0, 2, 0,
+      -4, 0.5, 2,
+      4, 0.5, 2,
     ]
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vb), gl.STATIC_DRAW)
 
@@ -317,13 +328,12 @@ export default {
       }
     }
   },
-  bgquad: function(gl, prog, uv) {
+  bgquad: function(gl, prog) {
     gl.useProgram(prog)
     /*
      * data */
     const vbo = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
-    let [u0, v0, usize, vsize] = uv
     let vbuffer = [
       -1, 1,
       -1, -1,
@@ -331,13 +341,6 @@ export default {
       -1, 1,
       1, -1,
       1, 1,
-      // uv
-      u0, v0+vsize,
-      u0, v0,
-      u0+usize, v0,
-      u0, v0+vsize,
-      u0+usize, v0,
-      u0+usize, v0+vsize,
     ]
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vbuffer), gl.STATIC_DRAW)
 
@@ -350,17 +353,11 @@ export default {
     const pos_loc = gl.getAttribLocation(prog, "pos")
     gl.enableVertexAttribArray(pos_loc)
     gl.vertexAttribPointer(pos_loc, 2, gl.FLOAT, false, 0, 0)
-    /* 
-     * pass uv to shader */
-    const uv_loc = gl.getAttribLocation(prog, "uv")
-    gl.enableVertexAttribArray(uv_loc)
-    gl.vertexAttribPointer(uv_loc, 2, gl.FLOAT, false, 0, 2*4*6)
 
     return {
-      uv,
-      preDraw: function({uv_offset_loc, cam}) {
+      preDraw: function({rota_loc, cam}) {
         gl.bindVertexArray(vao)
-        //gl.uniform2fv(uv_offset_loc, cam.uv_offset)
+        gl.uniformMatrix4fv(rota_loc, true, cam.view())
       },
       draw: function() {
         gl.useProgram(prog)

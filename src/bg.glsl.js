@@ -4,15 +4,17 @@ export default {
 
 precision mediump float;
 
+uniform mat4 P;
+uniform mat4 obj_rota;
+
 in vec2 pos;
-in vec2 uv;
 
-//uniform vec4 uv;
-
-out vec2 vert_uv;
+out vec3 vert_uv;
 
 void main() {
-  vert_uv = uv;
+  vec3 f = vec3(1./P[0][0], 1./P[1][1], 0.);
+  vec3 _pos = vec3(pos, 0.)*f - vec3(0,0,1);
+  vert_uv = mat3(obj_rota) * normalize(_pos);
   gl_Position = vec4(pos, 0., 1.0);
 }
 `,
@@ -23,15 +25,14 @@ void main() {
 precision mediump float;
 
 uniform float time;
-in vec2 vert_uv;
+uniform samplerCube samp_col;
 
-uniform sampler2D samp_col;
-uniform vec2 uv_offset;
+in vec3 vert_uv;
 
 out vec4 color;
 
 void main() {
-  color = texture(samp_col, vert_uv+uv_offset);
+  color = texture(samp_col, normalize(vert_uv));
 }
 `
 }

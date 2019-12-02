@@ -58,10 +58,10 @@ export default function(gl, ar, nc, fc=false) {
       const [x,y,z] = cam.pos
       gl.uniformMatrix4fv(trans_loc, false, matrix.translation([-x,-y,-z]))
       const mat = matrix.lookat(cam.pos, targetPos, cam.up)
-      //cam.up[0] = mat[1]
-      //cam.up[1] = mat[5]
-      //cam.up[2] = mat[9]
       gl.uniformMatrix4fv(rota_loc, false, mat)
+    }
+    cam.view = function() {
+      return matrix.lookat(cam.pos, targetPos, cam.up)
     }
   }
 
