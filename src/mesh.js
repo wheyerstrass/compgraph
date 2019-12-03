@@ -23,7 +23,7 @@ export default {
       -4, 0, 2,
       4, 0.5, 2,
       -4, 0.5, 2,
-      // left
+      // right
       4, 0.5, 2,
       4, 0, 2,
       0, 0.5, -8,
@@ -31,7 +31,7 @@ export default {
       4, 0, 2,
       0, 0, -8,
       0, 0.5, -8,
-      // right
+      // left
       -4, 0.5, 2,
       0, 0.5, -8,
       -4, 0, 2,
@@ -51,6 +51,48 @@ export default {
       0, 2, 0,
       -4, 0.5, 2,
       4, 0.5, 2,
+
+      // UV
+      // bot
+      0.5, 0.5,
+      1, 0,
+      0, 0,
+      // back
+      0, 0,
+      1, 0,
+      1, 1/5,
+      //
+      0, 0,
+      1, 1/5,
+      0, 1/5,
+      // right
+      1/5, 0,
+      0, 0,
+      1.5, 1,
+      //
+      1/5, 0,
+      1, 1,
+      4/5, 1,
+      // left
+      1/5, 0,
+      1.5, 1,
+      0, 0,
+      //
+      0, 0,
+      0, 1,
+      1/5, 1,
+      // top
+      0.5, 1,
+      0.5, 0.5,
+      1, 0,
+      //
+      0.5, 1,
+      0, 0,
+      0.5, 0.5,
+      //
+      0.5, 0.5,
+      0, 0,
+      1, 0,
     ]
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vb), gl.STATIC_DRAW)
 
@@ -63,6 +105,11 @@ export default {
     const pos_loc = gl.getAttribLocation(prog, "pos")
     gl.enableVertexAttribArray(pos_loc)
     gl.vertexAttribPointer(pos_loc, 3, gl.FLOAT, false, 0, 0)
+    /* 
+     * pass uv to shader */
+    const uv_loc = gl.getAttribLocation(prog, "uv")
+    gl.enableVertexAttribArray(uv_loc)
+    gl.vertexAttribPointer(uv_loc, 2, gl.FLOAT, false, 0, 3*4*3*10)
 
     return {
       preDraw: function({trans_loc, rota_loc, pos, rota}) {
@@ -72,7 +119,7 @@ export default {
       },
       draw: function() {
         gl.useProgram(prog)
-        gl.drawArrays(gl.TRIANGLES, 0, vb.length/3)
+        gl.drawArrays(gl.TRIANGLES, 0, 3*10)
       }
     }
   },

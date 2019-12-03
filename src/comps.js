@@ -16,18 +16,24 @@ export default {
 
     target.rota = [1,0,0,0] // current rotation
     target.rota_t = [1,0,0,0] // target rotation
+    target.torq = [0,0,0]
 
     target.up = [...base_up]
     target.right = [...base_up]
     target.forward = [...base_forward]
 
     target.addRota = function(angle, [ax,ay,az]) {
+      if(angle===0) return
       const s = sign(angle)
       const val = abs(angle)
       target.rota_t = quat.mult(target.rota_t, quat.q(val,s*ax,s*ay,s*az))
     }
 
     target.update = function() {
+      target.addRota(target.torq[0], target.right)
+      target.addRota(target.torq[1], target.up)
+      target.addRota(target.torq[2], target.forward)
+
       const _q = quat.slerp(target.rota, target.rota_t, 0.1)
       target.rota[0] = _q[0]
       target.rota[1] = _q[1]

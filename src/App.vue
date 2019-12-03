@@ -21,6 +21,7 @@ import hullp from "@/dyson-hull.glsl.js"
 import intp from "@/dyson-interior.glsl.js"
 import bgp from "@/bg.glsl.js"
 import shipp from "@/ship.glsl.js"
+import dskyp from "@/dsky.glsl.js"
 
 export default {
   name: 'home',
@@ -67,25 +68,27 @@ export default {
     /*
      * cam */
     let cam = camera(gl, this.w/this.h, 0.1)
-    cam.orbitControls(ship.pos, 10, [0,0,0])
+    cam.orbitControls(ship.pos, 30)
     
     input.keydown({
       "w": () => (ship.vel[2] = 1),
       "s": () => (ship.vel[2] = -1),
-      "a": () => (ship.addRota(-10, ship.up)),
-      "d": () => (ship.addRota(10, ship.up)),
-      " ": () => (ship.addRota(-10, ship.right)),
-      "c": () => (ship.addRota(10, ship.right)),
-      "e": () => (ship.addRota(-10, ship.forward)),
-      "q": () => (ship.addRota(10, ship.forward)),
+      "a": () => (ship.torq[2] = 1),
+      "d": () => (ship.torq[2] = -1),
+      "q": () => (ship.torq[1] = -1),
+      "e": () => (ship.torq[1] = 1),
+      " ": () => (ship.torq[0] = -1),
+      "c": () => (ship.torq[0] = 1),
     })
     input.keyup({
       "w": () => (ship.vel[2] = 0),
       "s": () => (ship.vel[2] = 0),
-      "a": () => (ship.vel[0] = 0),
-      "d": () => (ship.vel[0] = 0),
-      " ": () => (ship.vel[1] = 0),
-      "c": () => (ship.vel[1] = 0),
+      "a": () => (ship.torq[2] = 0),
+      "d": () => (ship.torq[2] = 0),
+      "q": () => (ship.torq[1] = 0),
+      "e": () => (ship.torq[1] = 0),
+      " ": () => (ship.torq[0] = 0),
+      "c": () => (ship.torq[0] = 0),
     })
     input.mousemove(function(mx,my) {
       cam.rota_t[0] += -mx*0.5
@@ -105,7 +108,7 @@ export default {
       "time", "light",
       "P", "cam_trans", "cam_rota",
       "obj_trans", "obj_rota",
-      "samp_col", "samp_nor",
+      "spacenoise"
     ])
     let bg = meshes.bgquad(gl, bg_prog.id)
     bg_prog.objs.push(bg)
@@ -207,14 +210,6 @@ export default {
     // start once all assets finished loading
     const render =  function() {
       // upload textures to gpu
-      shader.cubemap(gl, ship_prog.id, 0, ship_prog.locs["samp_col"], {
-        px: assets.get("space_xp"),
-        nx: assets.get("space_xn"),
-        py: assets.get("space_yp"),
-        ny: assets.get("space_yp"),
-        pz: assets.get("space_zp"),
-        nz: assets.get("space_zn"),
-      })
       shader.cubemap(gl, ship_prog.id, 1, ship_prog.locs["samp_col"], {
         px: assets.get("ship"),
         nx: assets.get("ship"),
@@ -239,11 +234,19 @@ export default {
         pz: assets.get("hull"),
         nz: assets.get("hull"),
       })
-      shader.texture(gl, tube_prog.id, 4, tube_prog.locs["samp_col"],
-        assets.get("hull")
-      )
+      shader.cubemap(gl, bg_prog.id, 4, bg_prog.locs["spacenoise"], {
+        px: assets.get("spacenoise"),
+        nx: assets.get("spacenoise"),
+        py: assets.get("spacenoise"),
+        ny: assets.get("spacenoise"),
+        pz: assets.get("spacenoise"),
+        nz: assets.get("spacenoise"),
+      })
       shader.texture(gl, plane_prog.id, 5, plane_prog.locs["samp_col"],
         assets.get("hull")
+      )
+      shader.texture(gl, ship_prog.id, 6, ship_prog.locs["samp_col"],
+        assets.get("shiphull")
       )
       requestAnimationFrame(renderLoop)
     }
@@ -254,11 +257,8 @@ export default {
     assets.img("ship", "img/ship/base.png",render)
     assets.img("shipfront", "img/ship/front.png", render)
 
-    assets.img("space_xp", "img/space/xp.jpg", render)
-    assets.img("space_xn", "img/space/xn.jpg", render)
-    assets.img("space_zp", "img/space/zp.jpg", render)
-    assets.img("space_zn", "img/space/zn.jpg", render)
-    assets.img("space_yp", "img/space/yp.jpg", render)
+    assets.img("spacenoise", "img/spacenoise.png", render)
+    assets.img("shiphull", "img/shiphull.png", render)
   },
 }
 </script>

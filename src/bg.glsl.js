@@ -25,14 +25,17 @@ void main() {
 precision mediump float;
 
 uniform float time;
-uniform samplerCube samp_col;
+uniform samplerCube spacenoise;
 
 in vec3 vert_uv;
 
 out vec4 color;
 
 void main() {
-  color = texture(samp_col, normalize(vert_uv));
+  vec4 noise = texture(spacenoise, vert_uv);
+  float ofs = sqrt(length(gl_FragCoord.xy));
+  vec3 b = 1.5*noise.rgb-0.7 * clamp(cos(0.1*time+ofs), 0.5, 1.0);
+  color = vec4(b, 1.0);
 }
 `
 }

@@ -30,7 +30,7 @@ export default function(gl, ar, nc, fc=false) {
     }
   }
 
-  cam.orbitControls = function(targetPos, dist=10, pos=[0,0,0], rota=[0,90]) {
+  cam.orbitControls = function(targetPos, dist=10, pos=[0,0,0], rota=[0,45]) {
     cam.dist = dist
     cam.dist_t = dist
     pos[0] += targetPos[0]
