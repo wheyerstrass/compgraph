@@ -5,7 +5,7 @@ export default {
 precision mediump float;
 
 uniform mat4 P;
-uniform mat4 obj_rota;
+uniform mat4 cam_rota;
 
 in vec2 pos;
 
@@ -14,7 +14,7 @@ out vec3 vert_uv;
 void main() {
   vec3 f = vec3(1./P[0][0], 1./P[1][1], 0.);
   vec3 _pos = vec3(pos, 0.)*f - vec3(0,0,1);
-  vert_uv = mat3(obj_rota) * normalize(_pos);
+  vert_uv = mat3(transpose(cam_rota)) * normalize(_pos);
   gl_Position = vec4(pos, 0., 1.0);
 }
 `,

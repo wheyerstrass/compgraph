@@ -13,6 +13,29 @@ export default {
     0, 0, 0, 1
   ],
 
+  transpose: function([
+    m00, m01, m02, m03,
+    m10, m11, m12, m13,
+    m20, m21, m22, m23,
+    m30, m31, m32, m33,
+  ]) {
+    return [
+      m00, m10, m20, m30,
+      m01, m11, m21, m31,
+      m02, m12, m22, m32,
+      m03, m13, m23, m33,
+    ]
+  },
+
+  scaling: function([x,y,z]) {
+    return [
+      x, 0, 0, 0,
+      0, y, 0, 0,
+      0, 0, z, 0,
+      0, 0, 0, 1
+    ]
+  },
+
   translation: function(vec) {
     const [x,y,z] = vec
     return new Float32Array([
@@ -41,7 +64,7 @@ export default {
     const f = vec3.norm(vec3.diff(at, from))
     const U = vec3.norm(upvec)
     const s = vec3.norm(vec3.cross(f, U))
-    const u = vec3.cross(s, f)
+    const u = vec3.norm(vec3.cross(s, f))
     return [
       s[0], u[0], -f[0], 0,
       s[1], u[1], -f[1], 0,

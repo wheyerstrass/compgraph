@@ -1,6 +1,4 @@
 import vec3 from "@/vec.js"
-import matrix from "@/matrix.js"
-import quat from "@/quat.js"
 
 export default {
 
@@ -112,17 +110,17 @@ export default {
     gl.vertexAttribPointer(uv_loc, 2, gl.FLOAT, false, 0, 3*4*3*10)
 
     return {
-      preDraw: function({trans_loc, rota_loc, pos, rota}) {
-        gl.bindVertexArray(vao)
-        gl.uniformMatrix4fv(trans_loc, false, matrix.translation(pos))
-        gl.uniformMatrix4fv(rota_loc, false, quat.mat(quat.inv(rota)))
-      },
-      draw: function() {
+      draw: function({pos, rota, size}) {
         gl.useProgram(prog)
+        gl.bindVertexArray(vao)
+        gl.uniformMatrix4fv(pos.loc, false, pos.data)
+        gl.uniformMatrix4fv(rota.loc, false, rota.data)
+        gl.uniformMatrix4fv(size.loc, false, size.data)
         gl.drawArrays(gl.TRIANGLES, 0, 3*10)
       }
     }
   },
+
   cube: function(gl, prog, size) {
     gl.useProgram(prog)
     /*
@@ -235,26 +233,25 @@ export default {
     gl.vertexAttribPointer(pos_loc, 3, gl.FLOAT, false, 0, 0)
 
     return {
-      preDraw: function({trans_loc, rota_loc, pos, rota}) {
-        gl.bindVertexArray(vao)
-        gl.uniformMatrix4fv(trans_loc, false, matrix.translation(pos))
-        gl.uniformMatrix4fv(rota_loc, false, quat.mat(quat.inv(rota)))
-      },
-      draw: function() {
+      draw: function({pos, rota, size}) {
         gl.useProgram(prog)
+        gl.bindVertexArray(vao)
+        gl.uniformMatrix4fv(pos.loc, false, pos.data)
+        gl.uniformMatrix4fv(rota.loc, false, rota.data)
+        gl.uniformMatrix4fv(size.loc, false, size.data)
         gl.drawArrays(gl.TRIANGLES, 0, 6*6)
       }
     }
   },
 
-  plane: function(gl, prog, size, pos, rota) {
+  plane: function(gl, prog) {
     gl.useProgram(prog)
     /*
      * data */
     const vbo = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
-    const t = size/10;
-    const l = size/2;
+    const t = 1/10;
+    const l = 1/2;
     let vbuffer = [
       l,  0, l,
       l,  0, -l,
@@ -300,42 +297,37 @@ export default {
     gl.vertexAttribPointer(uv_loc, 2, gl.FLOAT, false, 0, 3*4*6*2)
 
     return {
-      pos,
-      rota,
-      preDraw: function({trans_loc, rota_loc}) {
-        gl.bindVertexArray(vao)
-        gl.uniformMatrix4fv(trans_loc, false, matrix.translation(pos))
-        gl.uniformMatrix4fv(rota_loc, false, matrix.rotation(rota))
-      },
-      draw: function() {
+      draw: function({pos, rota, size}) {
         gl.useProgram(prog)
+        gl.bindVertexArray(vao)
+        gl.uniformMatrix4fv(pos.loc, false, pos.data)
+        gl.uniformMatrix4fv(size.loc, false, size.data)
+        gl.uniformMatrix4fv(rota.loc, false, rota.data)
         gl.drawArrays(gl.TRIANGLES, 0, 6*1)
       },
-      update: function() {}
     }
   },
 
-  quad: function(gl, prog, size, pos, rota) {
+  quad: function(gl, prog) {
     gl.useProgram(prog)
     /*
      * data */
     const vbo = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
-    const l = size/2;
     let vbuffer = [
-      l,  l, 0,
-      -l, -l, 0,
-      l, -l, 0,
-      l,  l, 0,
-      -l,  l, 0,
-      -l, -l, 0,
+      -1, 1, 0.0,
+      1, 1, 0.0,
+      1, -1, 0.0,
+      -1, 1, 0.0,
+      1, -1, 0.0,
+      -1, -1, 0.0,
       // uv
-      1,  1,
-      0,  0,
-      1,  0,
-      1,  1,
-      0,  1, 
-      0,  0,
+      0, 1,
+      0, 0,
+      1, 0,
+      0, 1,
+      1, 0,
+      1, 1,
     ]
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vbuffer), gl.STATIC_DRAW)
 
@@ -355,26 +347,17 @@ export default {
     gl.vertexAttribPointer(uv_loc, 2, gl.FLOAT, false, 0, 3*4*6)
 
     return {
-      pos,
-      rota,
-      preDraw: function({trans_loc, rota_loc, proj_loc}) {
-        gl.bindVertexArray(vao)
-        gl.uniformMatrix4fv(trans_loc, false, matrix.translation(pos))
-        gl.uniformMatrix4fv(rota_loc, false, matrix.rotation(rota))
-        //gl.uniformMatrix4fv(proj_loc, true,
-        //matrix.ortho(-1000, 1000, 1000, -1000, 0.1, 3000)
-        //)
-      },
-      draw: function({proj_loc, cam}) {
+      draw: function({pos, rota, size}) {
         gl.useProgram(prog)
-        gl.clear(gl.DEPTH_BUFFER_BIT)
-        gl.disable(gl.DEPTH_TEST)
+        gl.bindVertexArray(vao)
+        gl.uniformMatrix4fv(pos.loc, false, pos.data)
+        gl.uniformMatrix4fv(size.loc, false, size.data)
+        gl.uniformMatrix4fv(rota.loc, false, rota.data)
         gl.drawArrays(gl.TRIANGLES, 0, 6*1)
-        gl.enable(gl.DEPTH_TEST)
-        //cam.pushPerspective(proj_loc)
       }
     }
   },
+
   bgquad: function(gl, prog) {
     gl.useProgram(prog)
     /*
@@ -402,28 +385,25 @@ export default {
     gl.vertexAttribPointer(pos_loc, 2, gl.FLOAT, false, 0, 0)
 
     return {
-      preDraw: function({rota_loc, cam}) {
-        gl.bindVertexArray(vao)
-        gl.uniformMatrix4fv(rota_loc, true, cam.view())
-      },
       draw: function() {
         gl.useProgram(prog)
+        gl.bindVertexArray(vao)
         gl.clear(gl.DEPTH_BUFFER_BIT)
         gl.disable(gl.DEPTH_TEST)
         gl.drawArrays(gl.TRIANGLES, 0, 6*1)
         gl.enable(gl.DEPTH_TEST)
-      },
-      update: function(){}
+      }
     }
   },
 
-  grid: function(gl, prog, size, res, pos, rota) {
+  grid: function(gl, prog, res) {
     gl.useProgram(prog)
     /*
      * data */
     const vbo = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
     let vb = []
+    const size = 1
     let s = size/res
     // positions
     for(let z=0; z<res; ++z) {
@@ -470,21 +450,18 @@ export default {
     gl.vertexAttribPointer(uv_loc, 2, gl.FLOAT, false, 0, 3*4*6*res*res)
 
     return {
-      pos,
-      rota,
-      preDraw: function({trans_loc, rota_loc}) {
-        gl.bindVertexArray(vao)
-        gl.uniformMatrix4fv(trans_loc, false, matrix.translation(pos))
-        gl.uniformMatrix4fv(rota_loc, false, matrix.rotation(rota))
-      },
-      draw: function() {
+      draw: function({pos, rota, size}) {
         gl.useProgram(prog)
+        gl.bindVertexArray(vao)
+        gl.uniformMatrix4fv(pos.loc, false, pos.data)
+        gl.uniformMatrix4fv(size.loc, false, size.data)
+        gl.uniformMatrix4fv(rota.loc, false, rota.data)
         gl.drawArrays(gl.TRIANGLES, 0, 6*res*res)
       }
     }
   },
 
-  sphereIn: function(gl, prog, size, res, pos, rota) {
+  sphereIn: function(gl, prog, res) {
     gl.useProgram(prog)
     /*
      * data */
@@ -528,10 +505,6 @@ export default {
       const m2p = scale(0.5, sum([p4,p5,p6], [p7,p8,p9]))
       const m3p = scale(0.5, sum([p7,p8,p9], [p1,p2,p3]))
       return [
-        //p7,p8,p9, ...m2p, ...m3p,
-        //...m2p, p4,p5,p6, ...m1p,
-        //...m3p, ...m1p, p1,p2,p3,
-        //...m3p, ...m2p, ...m1p
         p1,p2,p3, ...m1p, ...m3p,
         ...m1p, p4,p5,p6, ...m2p,
         ...m3p, ...m2p, p7,p8,p9,
@@ -553,7 +526,7 @@ export default {
     }
     let vb = []
     for(let l=0; l<lvli.length; l+=3) {
-      vb.push(...scale(size, norm([lvli[l+0], lvli[l+1], lvli[l+2]])))
+      vb.push(...scale(1, norm([lvli[l+0], lvli[l+1], lvli[l+2]])))
     }
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vb), gl.STATIC_DRAW)
 
@@ -566,28 +539,20 @@ export default {
     const pos_loc = gl.getAttribLocation(prog, "pos")
     gl.enableVertexAttribArray(pos_loc)
     gl.vertexAttribPointer(pos_loc, 3, gl.FLOAT, false, 0, 0)
-    /* 
-     * pass uv to shader - pos == uv in sphere case */
-    const uv_loc = gl.getAttribLocation(prog, "uv")
-    gl.enableVertexAttribArray(uv_loc)
-    gl.vertexAttribPointer(uv_loc, 3, gl.FLOAT, false, 0, 0)
 
     return {
-      pos,
-      rota,
-      preDraw: function({trans_loc, rota_loc}) {
-        gl.bindVertexArray(vao)
-        gl.uniformMatrix4fv(trans_loc, false, matrix.translation(pos))
-        gl.uniformMatrix4fv(rota_loc, false, matrix.rotation(rota))
-      },
-      draw: function() {
+      draw: function({pos, rota, size}) {
         gl.useProgram(prog)
+        gl.bindVertexArray(vao)
+        gl.uniformMatrix4fv(pos.loc, false, pos.data)
+        gl.uniformMatrix4fv(size.loc, false, size.data)
+        gl.uniformMatrix4fv(rota.loc, false, rota.data)
         gl.drawArrays(gl.TRIANGLES, 0, 3*4*Math.pow(4,res))
       }
     }
   },
 
-  sphereOut: function(gl, prog, size, res, pos, rota) {
+  sphereOut: function(gl, prog, res) {
     gl.useProgram(prog)
     /*
      * data */
@@ -652,10 +617,10 @@ export default {
     }
     let vb = []
     for(let l=0; l<lvli.length; l+=3) {
-      vb.push(...scale(size, norm([lvli[l+0], lvli[l+1], lvli[l+2]])))
+      vb.push(...scale(1, norm([lvli[l+0], lvli[l+1], lvli[l+2]])))
     }
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vb), gl.STATIC_DRAW)
-
+    
     /*
      * vao */
     const vao = gl.createVertexArray()
@@ -665,29 +630,20 @@ export default {
     const pos_loc = gl.getAttribLocation(prog, "pos")
     gl.enableVertexAttribArray(pos_loc)
     gl.vertexAttribPointer(pos_loc, 3, gl.FLOAT, false, 0, 0)
-    /* 
-     * pass uv to shader */
-    const uv_loc = gl.getAttribLocation(prog, "uv")
-    gl.enableVertexAttribArray(uv_loc)
-    gl.vertexAttribPointer(uv_loc, 3, gl.FLOAT, false, 0, 0)
 
     return {
-      pos,
-      rota,
-      preDraw: function({trans_loc, rota_loc}) {
-        gl.bindVertexArray(vao)
-        gl.uniformMatrix4fv(trans_loc, false, matrix.translation(pos))
-        gl.uniformMatrix4fv(rota_loc, false, matrix.rotation(rota))
-      },
-      draw: function() {
+      draw: function({pos, rota, size}) {
         gl.useProgram(prog)
+        gl.bindVertexArray(vao)
+        gl.uniformMatrix4fv(pos.loc, false, pos.data)
+        gl.uniformMatrix4fv(size.loc, false, size.data)
+        gl.uniformMatrix4fv(rota.loc, false, rota.data)
         gl.drawArrays(gl.TRIANGLES, 0, 3*4*Math.pow(4,res))
-      },
-      update: function() {}
+      }
     }
   },
 
-  tube: function(gl, prog, length, r0, r1, res, pos, rota) {
+  tube: function(gl, prog, length, r0, r1, res) {
     gl.useProgram(prog)
     /*
      * data */
@@ -746,7 +702,7 @@ export default {
       verts.push(0,0)
       //
       verts.push(1,1)
-      verts.push(0,1)
+      verts.push(0,0)
       verts.push(1,0)
       // inner face
       verts.push(1,1)
@@ -774,7 +730,6 @@ export default {
       verts.push(1,0)
     }
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW)
-    //console.log(verts.length/3, 6*res*2)
 
     /*
      * vao */
@@ -789,22 +744,17 @@ export default {
      * pass uv to shader */
     const uv_loc = gl.getAttribLocation(prog, "uv")
     gl.enableVertexAttribArray(uv_loc)
-    gl.vertexAttribPointer(uv_loc, 2, gl.FLOAT, false, 0, 3*4*8*res)
+    gl.vertexAttribPointer(uv_loc, 2, gl.FLOAT, false, 0, 4*8*9*res)
 
     return {
-      pos,
-      rota,
-      preDraw: function({trans_loc, rota_loc}) {
-        gl.bindVertexArray(vao)
-        gl.uniformMatrix4fv(trans_loc, false, matrix.translation(pos))
-        gl.uniformMatrix4fv(rota_loc, false, matrix.rotation(rota))
-      },
-      draw: function() {
+      draw: function({pos, rota, size}) {
         gl.useProgram(prog)
+        gl.bindVertexArray(vao)
+        gl.uniformMatrix4fv(pos.loc, false, pos.data)
+        gl.uniformMatrix4fv(rota.loc, false, rota.data)
+        gl.uniformMatrix4fv(size.loc, false, size.data)
         gl.drawArrays(gl.TRIANGLES, 0, 3*8*res)
       }
     }
-  },
-
-
+  }
 }

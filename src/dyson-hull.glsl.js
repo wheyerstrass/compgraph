@@ -11,6 +11,7 @@ uniform mat4 cam_trans;
 uniform mat4 cam_rota;
 uniform mat4 obj_trans;
 uniform mat4 obj_rota;
+uniform mat4 obj_scale;
 uniform vec3 light;
 
 uniform samplerCube samp_norm;
@@ -21,7 +22,7 @@ out vec3 vert_norm;
 out vec3 vert_light;
 
 void main() {
-  mat4 M = obj_trans*obj_rota;
+  mat4 M = obj_scale*obj_trans*obj_rota;
   mat4 V = cam_rota*cam_trans;
   mat4 VM = V * M;
 
@@ -46,24 +47,27 @@ in vec3 vert_light;
 
 uniform float time;
 
-uniform samplerCube samp_col;
-uniform samplerCube samp_norm;
+uniform sampler2D samp_col;
 
 out vec4 color;
 
 ${phong}
 
 void main() {
+  vec3 coords = vert_uv;
+  vec3 n = abs(normalize(vert_uv));
+  n = normalize(max(n, 0.00001));
+  float b = n.x + n.y + n.z;
+  n /= vec3(b,b,b);
 
-  // calc lighting intensity
-  float li = 0.;
-  phong(vert_light, vert_pos, normalize(vert_norm), li);
+  vec4 xa = texture(samp_col, 2.*n.yz);
+  vec4 ya = texture(samp_col, 2.*n.xz);
+  vec4 za = texture(samp_col, 2.*n.xy);
+  vec4 tex = xa*n.x + ya*n.y + za*n.z;
 
-  // sample albedo
-  vec4 alb = texture(samp_col, vert_uv);
-
-  // final color
-  color = vec4(li * alb.rgb, alb.a);
+  color = tex;
+  if(vert_uv.z > 0.92)
+    color.a = 0.0;
 }
 `
 }

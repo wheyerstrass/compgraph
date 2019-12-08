@@ -30,38 +30,45 @@ export default function(gl, ar, nc, fc=false) {
     }
   }
 
-  cam.orbitControls = function(targetPos, dist=10, pos=[0,0,0], rota=[0,45]) {
+  cam.orbitControls = function(target, dist=10, pos=[0,0,0], rota=[0,90]) {
     cam.dist = dist
     cam.dist_t = dist
-    pos[0] += targetPos[0]
-    pos[1] += targetPos[1]
-    pos[2] += targetPos[2]
+    pos[0] += target.pos[0]
+    pos[1] += target.pos[1]
+    pos[2] += target.pos[2]
     cam.pos = pos
     cam.pos_t = [...pos]
     cam.rota = rota
     cam.rota_t = [...rota]
-    cam.up = [0,1,0]
-    cam.update = function() {
-      cam.dist += lint(cam.dist, cam.dist_t, 0.1, 0.1)
-      cam.rota[0] += lint(cam.rota[0], cam.rota_t[0], 0.1, 0.1)
-      cam.rota[1] += lint(cam.rota[1], cam.rota_t[1], 0.1, 0.1)
+    cam.up = [...target.up]
+    cam.update = function(dt, th) {
+      cam.dist += lint(cam.dist, cam.dist_t, dt, th)
+      cam.rota[0] += lint(cam.rota[0], cam.rota_t[0], dt, th)
+      cam.rota[1] += lint(cam.rota[1], cam.rota_t[1], dt, th)
+      
       const phi = rad(cam.rota[0])
       const theta = rad(cam.rota[1])
       const z = cam.dist*sin(theta)*cos(phi)
       const x = cam.dist*sin(theta)*sin(phi)
       const y = cam.dist*cos(theta)
-      cam.pos[0] = targetPos[0] + x
-      cam.pos[1] = targetPos[1] + y
-      cam.pos[2] = targetPos[2] + z
+
+      cam.pos_t[0] = target.pos[0] + x
+      cam.pos_t[1] = target.pos[1] + y
+      cam.pos_t[2] = target.pos[2] + z
+
+      dt *= 0.5
+      cam.pos[0] += math.lint(cam.pos[0], cam.pos_t[0], dt, th)
+      cam.pos[1] += math.lint(cam.pos[1], cam.pos_t[1], dt, th)
+      cam.pos[2] += math.lint(cam.pos[2], cam.pos_t[2], dt, th)
     }
     cam.pushView = function(trans_loc, rota_loc) {
+      const mat = matrix.lookat(cam.pos, target.pos, cam.up)
       const [x,y,z] = cam.pos
       gl.uniformMatrix4fv(trans_loc, false, matrix.translation([-x,-y,-z]))
-      const mat = matrix.lookat(cam.pos, targetPos, cam.up)
       gl.uniformMatrix4fv(rota_loc, false, mat)
     }
     cam.view = function() {
-      return matrix.lookat(cam.pos, targetPos, cam.up)
+      return matrix.lookat(cam.pos, target.pos, cam.up)
     }
   }
 

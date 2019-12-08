@@ -1,25 +1,25 @@
 export default {
 
-  keydown(config) {
-    window.addEventListener("keydown", function({key}) {
+  keydown(config, target=window) {
+    target.addEventListener("keydown", function({key}) {
       if(config.hasOwnProperty(key)) config[key]()
     })
   },
 
-  keyup(config) {
-    window.addEventListener("keyup", function({key}) {
+  keyup(config, target=window) {
+    target.addEventListener("keyup", function({key}) {
       if(config.hasOwnProperty(key)) config[key]()
     })
   },
 
-  wheel(callback) {
-    window.addEventListener("wheel", function({deltaY}) {
+  wheel(callback, target=window) {
+    target.addEventListener("wheel", function({deltaY}) {
       callback(deltaY)
     })
   },
 
-  mousemove(callback) {
-    window.addEventListener("mousemove",
+  mousemove(callback, target=window) {
+    target.addEventListener("mousemove",
       function({buttons, movementX, movementY}) {
         if(buttons === 1)
           callback(movementX, movementY)
@@ -28,17 +28,3 @@ export default {
   }
 
 }
-/*
-addEventListener("mousemove", ({buttons, movementX, movementY}) => {
-    if(buttons !== 1) return
-      const rs = 2
-      const x = sign(movementX)
-      const y = sign(movementY)
-      squat = quat.mult(squat, quat.q(rs, ...vec3.scale(x, uvec)))
-      squat = quat.mult(squat, quat.q(rs, ...vec3.scale(y, rvec)))
-    })
-    addEventListener("wheel", ({deltaY}) => {
-      const z = sign(deltaY)
-      squat = quat.mult(squat, quat.q(4, ...vec3.scale(z, fvec)))
-    })
-    */
