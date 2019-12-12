@@ -4,10 +4,12 @@ export default {
 
 precision mediump float;
 
-in vec3 pos;
 in vec2 uv;
+in vec3 pos;
+in vec3 nor;
 
 uniform float time;
+uniform vec3 light;
 
 uniform mat4 P;
 uniform mat4 cam_trans;
@@ -19,36 +21,44 @@ uniform mat4 obj_scale;
 
 out vec3 vert_n;
 out vec3 vert_pos;
-out vec2 vert_uv;
+out vec3 vert_wpos;
+out vec3 vert_light;
+out float vert_scale;
 
 void main() {
   mat4 M = obj_scale*obj_trans*obj_rota;
   mat4 V = cam_rota*cam_trans;
   mat4 VM = V * M;
 
-  vert_uv = uv;
-  vert_n = pos;
+  vert_scale = obj_scale[0][0];
+  vert_light = (VM * vec4(light, 1.0)).xyz;
+  vert_n = (VM * vec4(nor, 0.0)).xyz;
+
+  vert_wpos = pos;
   vert_pos = (VM * vec4(pos, 1.0)).xyz;
   gl_Position = P * vec4(vert_pos, 1.0);
 }
 `,
 
-  frag: () =>
+  frag: (funcs="") =>
 `#version 300 es
 
 precision mediump float;
 
-in vec2 vert_uv;
 in vec3 vert_pos;
+in vec3 vert_wpos;
 in vec3 vert_n;
+in vec3 vert_light;
+in float vert_scale;
 
 uniform sampler2D samp_col;
 
 out vec4 color;
 
+${funcs}
+
 void main() {
-  vec3 coords = vert_n;
-  vec3 n = abs(normalize(vert_n));
+  vec3 n = abs(normalize(vert_wpos));
   n = normalize(max(n, 0.00001));
   float b = n.x + n.y + n.z;
   n /= vec3(b,b,b);
@@ -58,10 +68,10 @@ void main() {
   vec4 za = texture(samp_col, n.xy);
   vec4 tex = xa*n.x + ya*n.y + za*n.z;
 
-  float z = gl_FragCoord.z*2. - 1.;
-  z = (2.*0.1*10000.) / (10000.+0.1 - z*(10000.-0.1)) / 2000.;
-
-  color = tex;
+  float d = distance(vert_light,vert_pos);
+  float at = 800.*vert_scale/(d*d);
+  float li = phong(vert_light, vert_pos, normalize(vert_n));
+  color = vec4(at*li*tex.xyz, tex.a);
 }
 `
 }

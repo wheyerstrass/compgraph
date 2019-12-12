@@ -68,13 +68,19 @@ export default {
       target.pos[2] += math.lint(target.pos[2], target.pos_t[2], dt, th)
     }
     target.getTrans = function() {
-      return matrix.translation(target.pos)
+      return matrix.translate(target.pos)
     }
     target.getRota = function() {
       return quat.mat(quat.inv(target.rota))
     }
     target.getScale = function() {
-      return matrix.scaling(target.size)
+      return matrix.scale(target.size)
+    }
+    target.setRotaT = function([x,y,z,w]) {
+      target.rota_t[0] = x
+      target.rota_t[1] = y
+      target.rota_t[2] = z
+      target.rota_t[3] = w
     }
   },
 
@@ -85,13 +91,13 @@ export default {
     target.update = function() {
     }
     target.getTrans = function() {
-      return matrix.translation(target.pos)
+      return matrix.translate(target.pos)
     }
     target.getRota = function() {
       return matrix.transpose(matrix.lookat(target.pos, ref.pos, ref.up))
     }
     target.getScale = function() {
-      return matrix.scaling(target.size)
+      return matrix.scale(target.size)
     }
   },
 

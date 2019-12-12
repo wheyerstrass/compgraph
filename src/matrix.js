@@ -27,7 +27,7 @@ export default {
     ]
   },
 
-  scaling: function([x,y,z]) {
+  scale: function([x,y,z]) {
     return [
       x, 0, 0, 0,
       0, y, 0, 0,
@@ -36,7 +36,7 @@ export default {
     ]
   },
 
-  translation: function(vec) {
+  translate: function(vec) {
     const [x,y,z] = vec
     return new Float32Array([
       1, 0, 0, 0,
@@ -46,7 +46,7 @@ export default {
     ])
   },
 
-  rotation: function(axis_angle) {
+  rotate: function(axis_angle) {
     let [x_,y_,z_,a] = axis_angle
     a = -rad(a)
     const [x,y,z] = vec3.norm([x_,y_,z_])

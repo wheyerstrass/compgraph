@@ -36,6 +36,7 @@ void main() {
 
 precision mediump float;
 
+uniform vec2 res;
 uniform float time;
 
 in vec3 vert_pos;
@@ -47,7 +48,10 @@ uniform sampler2D samp_col2;
 out vec4 color;
 
 void main() {
-  color = texture(samp_col, vert_uv);
+  float d = distance(vert_uv, vec2(.5,.5));
+  vec4 sun = vec4(0.25, 0.2, 1., 0.02) / d;
+  color = sun;
+  color.a = clamp(color.a, 0., 0.9);
 }
 `
 }

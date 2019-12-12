@@ -729,6 +729,46 @@ export default {
       verts.push(0,0)
       verts.push(1,0)
     }
+    for(let i=0; i<res; ++i) {
+      // inner coords
+      const [x0,y0] = xy(angle(i),r0)
+      const [x1,y1] = xy(angle(i+1),r0)
+      // outer coords
+      const [X0,Y0] = xy(angle(i),r1)
+      const [X1,Y1] = xy(angle(i+1),r1)
+      // front face
+      verts.push(0,0,1)
+      verts.push(0,0,1)
+      verts.push(0,0,1)
+      //
+      verts.push(0,0,1)
+      verts.push(0,0,1)
+      verts.push(0,0,1)
+      // inner face
+      verts.push(-x0,-y0,0)
+      verts.push(-x0,-y0,0)
+      verts.push(-x1,-y1,0)
+      //
+      verts.push(-x0,-y0,0)
+      verts.push(-x1,-y1,0)
+      verts.push(-x1,-y1,0)
+      // outer face
+      verts.push(X0,Y0,0)
+      verts.push(X1,Y1,0)
+      verts.push(X0,Y0,0)
+      //
+      verts.push(X0,Y0,0)
+      verts.push(X1,Y1,0)
+      verts.push(X1,Y1,0)
+      // back face
+      verts.push(0,0,-1)
+      verts.push(0,0,-1)
+      verts.push(0,0,-1)
+      //
+      verts.push(0,0,-1)
+      verts.push(0,0,-1)
+      verts.push(0,0,-1)
+    }
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW)
 
     /*
@@ -745,6 +785,11 @@ export default {
     const uv_loc = gl.getAttribLocation(prog, "uv")
     gl.enableVertexAttribArray(uv_loc)
     gl.vertexAttribPointer(uv_loc, 2, gl.FLOAT, false, 0, 4*8*9*res)
+    /* 
+     * pass uv to shader */
+    const nor_loc = gl.getAttribLocation(prog, "nor")
+    gl.enableVertexAttribArray(nor_loc)
+    gl.vertexAttribPointer(nor_loc, 3, gl.FLOAT, false, 0, (6+9)*4*8*res)
 
     return {
       draw: function({pos, rota, size}) {
@@ -754,6 +799,45 @@ export default {
         gl.uniformMatrix4fv(rota.loc, false, rota.data)
         gl.uniformMatrix4fv(size.loc, false, size.data)
         gl.drawArrays(gl.TRIANGLES, 0, 3*8*res)
+      }
+    }
+  },
+
+  /*
+   * buffers [{
+   *  name: "pos", data: [...], stride: 3
+   * }]
+   */
+  staticInstanced: function(gl, prog, buffers, verts, insts) {
+    gl.useProgram(prog)
+    /*
+     * vao */
+    const vao = gl.createVertexArray()
+    gl.bindVertexArray(vao)
+    /* 
+     * updload buffers */
+    buffers.forEach(({name,data,stride,div}) => {
+      /* vbo */
+      const vbo = gl.createBuffer()
+      gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
+      /* data */
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW)
+      const loc = gl.getAttribLocation(prog, name)
+      gl.enableVertexAttribArray(loc)
+      gl.vertexAttribPointer(loc, stride, gl.FLOAT, false, 0, 0)
+      gl.vertexAttribDivisor(loc, div)
+    })
+
+    return {
+      draw: function({pos,rota,size}) {
+        gl.useProgram(prog)
+        gl.bindVertexArray(vao)
+        gl.disable(gl.CULL_FACE)
+        gl.uniformMatrix4fv(pos.loc, false, pos.data)
+        //gl.uniformMatrix4fv(rota.loc, false, rota.data)
+        gl.uniformMatrix4fv(size.loc, false, size.data)
+        gl.drawArraysInstanced(gl.TRIANGLES, 0, verts, insts)
+        gl.enable(gl.CULL_FACE)
       }
     }
   }

@@ -65,7 +65,7 @@ void main() {
   vec4 za = texture(samp_col, 2.*n.xy);
   vec4 tex = xa*n.x + ya*n.y + za*n.z;
 
-  color = tex;
+  color = vec4(0.1*tex.xyz, tex.a);
   if(vert_uv.z > 0.92)
     color.a = 0.0;
 }

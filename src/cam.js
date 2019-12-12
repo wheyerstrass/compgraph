@@ -12,7 +12,7 @@ export default function(gl, ar, nc, fc=false) {
   let cam = {}
 
   cam.pushPerspective = (fc) ?
-    (loc) => gl.uniformMatrix4fv(loc, false, perspective(ar,nc,fc)) :
+    (loc, _fc=fc) => gl.uniformMatrix4fv(loc, false, perspective(ar,nc,_fc)) :
     (loc) => gl.uniformMatrix4fv(loc, false, perspectiveInf(ar,nc))
 
   cam.pushView = function() {
@@ -24,7 +24,7 @@ export default function(gl, ar, nc, fc=false) {
     cam.rota = rota
     cam.pushView = function(trans_loc, rota_loc) {
       const [x,y,z] = cam.pos
-      gl.uniformMatrix4fv(trans_loc, false, matrix.translation([-x,-y,-z]))
+      gl.uniformMatrix4fv(trans_loc, false, matrix.translate([-x,-y,-z]))
       const mat = quat.mat(cam.rota)
       gl.uniformMatrix4fv(rota_loc, false, mat)
     }
@@ -62,13 +62,13 @@ export default function(gl, ar, nc, fc=false) {
       cam.pos[2] += math.lint(cam.pos[2], cam.pos_t[2], dt, th)
     }
     cam.pushView = function(trans_loc, rota_loc) {
-      const mat = matrix.lookat(cam.pos, target.pos, cam.up)
+      const mat = matrix.lookat(cam.pos, target.pos, target.up)
       const [x,y,z] = cam.pos
-      gl.uniformMatrix4fv(trans_loc, false, matrix.translation([-x,-y,-z]))
+      gl.uniformMatrix4fv(trans_loc, false, matrix.translate([-x,-y,-z]))
       gl.uniformMatrix4fv(rota_loc, false, mat)
     }
     cam.view = function() {
-      return matrix.lookat(cam.pos, target.pos, cam.up)
+      return matrix.lookat(cam.pos, target.pos, target.up)
     }
   }
 

@@ -1,5 +1,5 @@
 export default (ka, kd, ks) => `
-void phong(in vec3 light, in vec3 vpos, in vec3 vnorm, out float li) {
+float phong(in vec3 light, in vec3 vpos, in vec3 vnorm) {
 
   vec3 nl = normalize(light-vpos);
   vec3 nn = normalize(vnorm);
@@ -15,6 +15,6 @@ void phong(in vec3 light, in vec3 vpos, in vec3 vnorm, out float li) {
   float rv = dot(nn, normalize(nl+np));
   float Is = ${ks} * pow(rv, 4.);
 
-  li = (Ia+Id+Is);
+  return (Ia+Id+Is);
 }
 `
