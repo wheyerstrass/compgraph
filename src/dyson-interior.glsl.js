@@ -25,6 +25,7 @@ out vec3 vert_norm;
 out vec3 vert_lnorm;
 out vec3 vert_light;
 out float vert_scale;
+out float v_h;
 
 void main() {
   mat4 M = obj_trans*obj_rota;
@@ -38,8 +39,9 @@ void main() {
   vert_norm = (V * vec4(pos, 0.0)).xyz;
   vert_lnorm = (V * vec4(texture(samp_hm_nm, pos).xyz, 0.0)).xyz;
 
-  vec3 hm = texture(samp_hm, pos).xyz-0.5;
-  float disp = (0.6*hm.r + 0.3*hm.g + 0.2*hm.b);
+  vec3 hm = texture(samp_hm,pos).xyz;
+  float disp = 0.1*(hm.r+hm.g+hm.b);
+  v_h = disp;
   if(pos.z > 0.8)
     disp = 0.0;
   
@@ -60,10 +62,13 @@ in vec3 vert_norm;
 in vec3 vert_lnorm;
 in vec3 vert_light;
 in float vert_scale;
+in float v_h;
 
 uniform float time;
+uniform mat4 cam_trans;
 
 uniform sampler2D samp_col;
+uniform sampler2D samp_col2;
 
 out vec4 color;
 
@@ -88,7 +93,10 @@ void main() {
   vec4 tex = xa*n.x + ya*n.y + za*n.z;
 
   color = tex;
-  vec4 f = vec4( fog(color.xyz, length(vert_pos),0.005), 1.0 );
+  vec3 cam_pos = vec3(cam_trans[0][3], cam_trans[1][3], cam_trans[2][3]);
+  float l = distance(cam_pos,vert_pos);
+  vec3 raydir = normalize(vert_pos-cam_pos);
+  vec4 f = vec4(fog(color.xyz, l, 0.0002), 1.0 );
   color = vec4(li*f.xyz, f.a);
   if(vert_uv.z > 0.85)
     color.a = 0.0;

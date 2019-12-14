@@ -51,7 +51,7 @@ void main() {
   float d = distance(vert_uv, vec2(.5,.5));
   vec4 sun = vec4(0.25, 0.2, 1., 0.02) / d;
   color = sun;
-  color.a = clamp(color.a, 0., 0.9);
+  color.a = clamp(color.a, 0., 1.0);
 }
 `
 }

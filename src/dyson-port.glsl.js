@@ -69,7 +69,7 @@ void main() {
   vec4 tex = xa*n.x + ya*n.y + za*n.z;
 
   float d = distance(vert_light,vert_pos);
-  float at = 800.*vert_scale/(d*d);
+  float at = 2000.*vert_scale/(d*d);
   float li = phong(vert_light, vert_pos, normalize(vert_n));
   color = vec4(at*li*tex.xyz, tex.a);
 }

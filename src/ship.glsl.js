@@ -15,11 +15,12 @@ uniform mat4 cam_rota;
 
 uniform mat4 obj_trans;
 uniform mat4 obj_rota;
+uniform mat4 obj_scale;
 
 out vec2 vert_uv;
 
 void main() {
-  mat4 M = obj_trans*obj_rota;
+  mat4 M = obj_trans*obj_rota*obj_scale;
   mat4 V = cam_rota*cam_trans;
   mat4 VM = V * M;
 

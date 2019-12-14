@@ -1,4 +1,9 @@
 export default {
+
+  axis_angle(axis, angle) {
+    return this.q(angle,...axis)
+  },
+
   q(w,x,y,z) {
     const {PI, cos, sin} = Math
     const t = w * PI/180/2

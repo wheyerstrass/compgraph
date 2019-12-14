@@ -461,6 +461,75 @@ export default {
     }
   },
 
+  isosphere: function(gl, prog, res) {
+    gl.useProgram(prog)
+    /*
+     * data */
+    const vbo = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
+    /*
+     *  Icosaeder
+     */
+    const lvl0 = [
+
+    ]
+    /* 1 triangle in -> 4 triangles out */
+    const {sum, scale, norm} = vec3
+    const tess = function([
+      p1, p2, p3,
+      p4, p5, p6,
+      p7, p8, p9
+    ]) {
+      const m1p = scale(0.5, sum([p1,p2,p3], [p4,p5,p6]))
+      const m2p = scale(0.5, sum([p4,p5,p6], [p7,p8,p9]))
+      const m3p = scale(0.5, sum([p7,p8,p9], [p1,p2,p3]))
+      return [
+        p1,p2,p3, ...m1p, ...m3p,
+        ...m1p, p4,p5,p6, ...m2p,
+        ...m3p, ...m2p, p7,p8,p9,
+        ...m1p, ...m2p, ...m3p
+      ]
+    }
+    let lvli = [...lvl0]
+    let lvln = []
+    for(let lvl=0; lvl<res; ++lvl) {
+      for(let l=0; l<lvli.length; l+=9) {
+        lvln.push(...tess([
+          lvli[l+0], lvli[l+1], lvli[l+2],
+          lvli[l+3], lvli[l+4], lvli[l+5],
+          lvli[l+6], lvli[l+7], lvli[l+8]
+        ]))
+      }
+      lvli = [...lvln]
+      lvln = []
+    }
+    let vb = []
+    for(let l=0; l<lvli.length; l+=3) {
+      vb.push(...scale(1, norm([lvli[l+0], lvli[l+1], lvli[l+2]])))
+    }
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vb), gl.STATIC_DRAW)
+
+    /*
+     * vao */
+    const vao = gl.createVertexArray()
+    gl.bindVertexArray(vao)
+    /* 
+     * pass position to shader */
+    const pos_loc = gl.getAttribLocation(prog, "pos")
+    gl.enableVertexAttribArray(pos_loc)
+    gl.vertexAttribPointer(pos_loc, 3, gl.FLOAT, false, 0, 0)
+
+    return {
+      draw: function({pos, rota, size}) {
+        gl.useProgram(prog)
+        gl.bindVertexArray(vao)
+        gl.uniformMatrix4fv(pos.loc, false, pos.data)
+        gl.uniformMatrix4fv(size.loc, false, size.data)
+        gl.uniformMatrix4fv(rota.loc, false, rota.data)
+        gl.drawArrays(gl.TRIANGLES, 0, 3*4*Math.pow(4,res))
+      }
+    }
+  },
   sphereIn: function(gl, prog, res) {
     gl.useProgram(prog)
     /*

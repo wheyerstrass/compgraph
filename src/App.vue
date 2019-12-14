@@ -72,9 +72,9 @@ export default {
       console.error("Keine WebGL 2 Unterstützung")
       return
     }
-
     /*
      * gl settings */
+    gl.enable(gl.DITHER)
     gl.enable(gl.DEPTH_TEST)
     gl.enable(gl.CULL_FACE)
     gl.enable(gl.BLEND)
@@ -82,19 +82,17 @@ export default {
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
     gl.clearColor(0.7, 0.7, 0.9, 1)
     const res = [gl.drawingBufferWidth, gl.drawingBufferHeight]
-
     /*
      * ship */
     let ship_prog = shader.prog(gl, shipp.vert(), shipp.frag(), [
       "time", "light",
       "P", "cam_trans", "cam_rota",
-      "obj_trans", "obj_rota",
+      "obj_trans", "obj_rota", "obj_scale",
       "samp_col", "samp_norm"
     ])
     let ship = meshes.ship(gl, ship_prog.id)
     ship_prog.objs.push(ship)
     comps.rigidbody(ship)
-
     /*
      * cam */
     let cam = camera(gl, canvas.clientWidth/canvas.clientHeight,1)
@@ -134,7 +132,7 @@ export default {
      */
     const _up = (...fs) => fs.reduce((all,f) => all.concat(f, " "), "")
     const _phong = phongp(0.5,0.5,0.6)
-    const _fog = fogp(0.5,0.6,0.7)
+    const _fog = fogp(0.5,0.6,0.9)
     const funcs = _up(_phong,_fog)
 
     /*
@@ -176,7 +174,7 @@ export default {
       "time", "light",
       "P", "cam_trans", "cam_rota",
       "obj_trans", "obj_rota", "obj_scale",
-      "samp_col", "samp_norm", "samp_hm", "samp_hm_nm"
+      "samp_col", "samp_col2", "samp_norm", "samp_hm", "samp_hm_nm"
     ])
     let interior = meshes.sphereIn(gl, int_prog.id, 6)
     comps.rigidbody(interior)
@@ -199,7 +197,7 @@ export default {
       "obj_trans", "obj_rota", "obj_scale",
       "samp_col", "samp_norm"
     ])
-    let tube = meshes.tube(gl, tube_prog.id, 1.2, 1*0.9, 2/3*0.9, 50)
+    let tube = meshes.tube(gl, tube_prog.id, 0.7, 1*0.9, 2/3*0.9, 50)
     comps.rigidbody(tube)
     tube_prog.objs.push(tube)
     /*
@@ -266,7 +264,7 @@ export default {
         target.size_t[2] = s
       }
     }
-    const max_scale = 40000
+    const max_scale = 10000
     ship.pos[2] = 0.76*max_scale
     ship.pos_t[2] = 0.76*max_scale
     //ship.pos[2] = max_scale
@@ -275,8 +273,8 @@ export default {
     //setScale(interior, 1.5)
     //setScale(water, 1.5)
     //setScale(tube, 1)
-    tube.pos[2] = 1.3
-    tube.pos_t[2] = 1.3
+    tube.pos[2] = 1.6
+    tube.pos_t[2] = 1.6
     //setScale(hull, 2)
     //interior.torq[2] = 0.02
     //tube.torq[2] = 0.02
@@ -311,13 +309,18 @@ export default {
         setScale(statics, 1.5*s)
       }
       if (dist < max_scale*0.4) {
-        //acc = 2
+        ship.size_t[0] = 0.1
+        ship.size_t[1] = 0.1
+        ship.size_t[2] = 0.1
+        cam.dist_t = 3
+        //acc = dist*0.0005
+        acc = 5
         const t = vec.norm(vec.diff(sun.pos,ship.pos))
         const r = vec.norm(ship.right)
         const f = vec.norm(ship.forward)
         const ta = Math.PI/2
 
-        const _dt = acc
+        const _dt = acc*10
         const datr = ta - Math.acos(vec.dot(t,r))
         vue.ship.a = datr*180/Math.PI
         if(Math.abs(datr) > th) {
@@ -389,6 +392,9 @@ export default {
       shader.texture(gl, int_prog.id, 1, int_prog.locs["samp_col"],
         assets.get("grass")
       )
+      shader.texture(gl, int_prog.id, 9, int_prog.locs["samp_col2"],
+        assets.get("hull")
+      )
       shader.cubemap(gl, int_prog.id, 2, int_prog.locs["samp_hm"], {
         px: assets.get("int_hm"),
         nx: assets.get("int_hm"),
@@ -423,7 +429,7 @@ export default {
 
     assets.img("int_hm", "img/int_hm.png",render)
     assets.img("int_hm_nm", "img/int_hm.nm.png",render)
-    assets.img("grass", "img/grass.png", render)
+    assets.img("grass", "img/grass2.jpg", render)
     assets.img("tree1", "img/tree1.png", render)
 
     assets.img("ship", "img/ship.png",render)
