@@ -19,7 +19,7 @@ function img(key, url, onready) {
   assets[key] = false
   _img.addEventListener("load", function() {
     assets[key] = _img
-    console.log(`Finishes loading: ${url}`)
+    //console.log(`Finishes loading: ${url}`)
     if(isready())
       onready()
   })

@@ -5,10 +5,7 @@
       :height="h">
     </canvas>
     <div id="debug">
-      <!-- <p><b>pos: </b>{{pos}}</p> -->
-      <b>dist-to-0:</b> {{distToNull}} <br>
-      <b>a:</b> {{ship.a}} <br>
-      <b>b:</b> {{ship.b}}
+      {{ship.distToNull}}
     </div>
   </div>
 </template>
@@ -21,24 +18,24 @@ import assets from "@/assets.js"
 import comps from "@/comps.js"
 import input from "@/input.js"
 
-import dbp from "@/debug.glsl.js"
+/* mesh shaders */
 import sunp from "@/sun.glsl.js"
-
 import intp from "@/dyson-interior.glsl.js"
 import intwp from "@/dyson-water.glsl.js"
 import hullp from "@/dyson-hull.glsl.js"
 import tubep from "@/dyson-port.glsl.js"
-import staticsp from "@/statics.glsl.js"
-
-import bgp from "@/bg.glsl.js"
 import shipp from "@/ship.glsl.js"
+import starsp from "@/stars.glsl.js"
 
+/* glsl functions */
 import fogp from "@/fog.glsl.js"
 import phongp from "@/phong.glsl.js"
+import triplanarp from "@/triplanar.glsl.js"
 
 import matrix from "@/matrix.js"
 import quat from "@/quat.js"
 import vec from "@/vec.js"
+import math from "@/math.js"
 
 export default {
   name: 'home',
@@ -78,9 +75,9 @@ export default {
     gl.enable(gl.DEPTH_TEST)
     gl.enable(gl.CULL_FACE)
     gl.enable(gl.BLEND)
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+    gl.blendFunc(gl.ONE, gl.ONE)
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
-    gl.clearColor(0.7, 0.7, 0.9, 1)
+    gl.clearColor(0.0, 0.0, 0.0, 1)
     const res = [gl.drawingBufferWidth, gl.drawingBufferHeight]
     /*
      * ship */
@@ -96,12 +93,12 @@ export default {
     /*
      * cam */
     let cam = camera(gl, canvas.clientWidth/canvas.clientHeight,1)
-    cam.orbitControls(ship, 30)
+    cam.orbitControls(ship, 2)
     
     let acc = 10
     input.keydown({
       "w": () => (ship.vel[2] = 1*acc),
-      "s": () => (ship.vel[2] = -1),
+      "s": () => (ship.vel[2] = -1*acc),
       "a": () => (ship.torq[2] = 1),
       "d": () => (ship.torq[2] = -1),
       "q": () => (ship.torq[1] = -1),
@@ -125,15 +122,16 @@ export default {
     })
     input.wheel(function(deltaY) {
       cam.dist_t += 2*deltaY
-      cam.dist_t = Math.max(cam.dist_t, 1)
+      cam.dist_t = Math.max(cam.dist_t, 2)
     })
     /*
      * shader programs 
      */
     const _up = (...fs) => fs.reduce((all,f) => all.concat(f, " "), "")
-    const _phong = phongp(0.5,0.5,0.6)
+    const _phong = phongp(0.2,0.5,0.1)
     const _fog = fogp(0.5,0.6,0.9)
-    const funcs = _up(_phong,_fog)
+    const _triplanar = triplanarp()
+    const funcs = _up(_phong,_fog,_triplanar)
 
     /*
      * sun */
@@ -147,25 +145,14 @@ export default {
     comps.billboard(sun, cam)
     sun_prog.objs.push(sun)
     /*
-     * bg */
-    let bg_prog = shader.prog(gl, bgp.vert(), bgp.frag(), [
-      "time", "light",
-      "P", "cam_trans", "cam_rota",
-      "obj_trans", "obj_rota",
-      "spacenoise"
-    ])
-    let bg = meshes.bgquad(gl, bg_prog.id)
-    comps.dummy(bg)
-    bg_prog.objs.push(bg)
-    /*
      * dyson hull */
-    let hull_prog = shader.prog(gl, hullp.vert(), hullp.frag(), [
+    let hull_prog = shader.prog(gl, hullp.vert(), hullp.frag(funcs), [
       "time", "light",
       "P", "cam_trans", "cam_rota",
       "obj_trans", "obj_rota", "obj_scale",
       "samp_col", "samp_norm", "samp_tex"
     ])
-    let hull = meshes.sphereOut(gl, hull_prog.id, 5)
+    let hull = meshes.isosphereOut(gl, hull_prog.id, 2)
     comps.rigidbody(hull)
     hull_prog.objs.push(hull)
     /*
@@ -176,7 +163,7 @@ export default {
       "obj_trans", "obj_rota", "obj_scale",
       "samp_col", "samp_col2", "samp_norm", "samp_hm", "samp_hm_nm"
     ])
-    let interior = meshes.sphereIn(gl, int_prog.id, 6)
+    let interior = meshes.isosphereIn(gl, int_prog.id, 5)
     comps.rigidbody(interior)
     int_prog.objs.push(interior)
     /*
@@ -186,7 +173,7 @@ export default {
       "P", "cam_trans", "cam_rota",
       "obj_trans", "obj_rota", "obj_scale",
     ])
-    let water = meshes.sphereIn(gl, intw_prog.id, 4)
+    let water = meshes.isosphereIn(gl, intw_prog.id, 2)
     comps.rigidbody(water)
     intw_prog.objs.push(water)
     /*
@@ -201,57 +188,60 @@ export default {
     comps.rigidbody(tube)
     tube_prog.objs.push(tube)
     /*
-     * statics */
-    let statics_prog = shader.prog(gl, staticsp.vert(), staticsp.frag(), [
-      "time",
-      "P", "cam_trans", "cam_rota",
-      "obj_trans", "obj_rota", "obj_scale",
-      "samp_col"
+     * stars
+     */
+    let stars_prog = shader.prog(gl, starsp.vert(), starsp.frag(), [
+      "P", "cam_rota", "cam_trans"
     ])
-    let s_bufs = [
-      {data: [
-        -1,1,
-        1, 1,
-        1,-1,
-        -1,1,
-        1,-1,
-        -1,-1,
-      ], name: "pos", stride: 2, div: 0},
-      {data: [
-        0,1,
-        1,1,
-        1,0,
-        0,1,
-        1,0,
-        0,0,
-      ], name: "uv", stride: 2, div: 0},
-    ]
-    let rdata = []
-    const n=1000
-    const a=Math.PI/2
+    const _rand = Math.random
+    const n = 1000
+    let _attribs = [{
+      name: "pos", stride: 2, div: 0, data: [
+        -1,1, 1,1, 1,-1,
+        -1,1, 1,-1, -1,-1,
+      ]
+    }, {
+      name: "cam_pos", stride: 3, div: n, data: [...cam.pos]
+    }]
+
+    let _offs = []
     for(let i=0; i<n; ++i) {
-      rdata.push(i*n/a, i*n/a)
+      const phi = math.lerp(0, 2*Math.PI, _rand(), 1)
+      const theta = math.lerp(0, Math.PI, _rand(), 1)
+      _offs.push(...math.polar3(10,phi,theta))
     }
-    let _rd = {data:rdata,name:"offset",stride:2,div:1}
-    s_bufs.push(_rd)
-    let statics = meshes.staticInstanced(gl, statics_prog.id, s_bufs, 6, n)
-    comps.dummy(statics)
-    statics.getTrans = () => matrix.translate([0,0,0])
-    statics.size = [1,1,1]
-    statics.getScale = () => matrix.scale(statics.size)
-    statics_prog.objs.push(statics)
+    _attribs.push({ name: "offs", stride: 3, div: 1, data: _offs })
+
+    let _scale = []
+    for(let i=0; i<n; ++i) {
+      const s = math.lerp(1, 7, _rand(), 1)
+      _scale.push(s)
+    }
+    _attribs.push({ name: "scale", stride: 1, div: 1, data: _scale })
+
+    let _col = []
+    for(let i=0; i<n; ++i) {
+      _col.push(_rand(), _rand(), _rand())
+    }
+    _attribs.push({ name: "col", stride: 3, div: 1, data: _col })
+
+    let stars = meshes.staticInstanced(gl, stars_prog.id, _attribs, 6, n)
+    comps.dummy(stars)
+    stars_prog.objs.push(stars)
+
+
     /*
      * progs
      */
     let progs = [
-      bg_prog,
+      stars_prog,
       ship_prog,
-      tube_prog,
-      int_prog,
-      intw_prog,
-      //statics_prog,
-      sun_prog,
-      hull_prog
+      //tube_prog,
+      //int_prog,
+      //intw_prog,
+      ////statics_prog,
+      //sun_prog,
+      //hull_prog
     ]
 
     const setScale = (target, s) => {
@@ -265,20 +255,13 @@ export default {
       }
     }
     const max_scale = 10000
-    ship.pos[2] = 0.76*max_scale
-    ship.pos_t[2] = 0.76*max_scale
-    //ship.pos[2] = max_scale
-    //ship.pos_t[2] = max_scale
-    //setScale(sun, 1)
-    //setScale(interior, 1.5)
-    //setScale(water, 1.5)
-    //setScale(tube, 1)
+    ship.pos[2] = 8
+    ship.pos_t[2] = 8
+    //ship.pos[2] = 0.76*max_scale
+    //ship.pos_t[2] = 0.76*max_scale
+    setScale(ship, 0.1)
     tube.pos[2] = 1.6
     tube.pos_t[2] = 1.6
-    //setScale(hull, 2)
-    //interior.torq[2] = 0.02
-    //tube.torq[2] = 0.02
-    //hull.torq[2] = 0.02
 
     const th = 0.01
     const dt = 0.1
@@ -298,39 +281,28 @@ export default {
         setScale(sun, 1)
         setScale(tube, 1)
         setScale(hull, 2)
-        setScale(statics, 0.1)
       }
       if (dist < max_scale && dist >= max_scale*0.75) {
         setScale(sun, 1.5*s)
         setScale(interior, 1.5*s)
-        setScale(water, 1.55*s)
+        setScale(water, 1.5*s)
         setScale(tube, s)
         setScale(hull, 2*s)
-        setScale(statics, 1.5*s)
       }
       if (dist < max_scale*0.4) {
-        ship.size_t[0] = 0.1
-        ship.size_t[1] = 0.1
-        ship.size_t[2] = 0.1
-        cam.dist_t = 3
-        //acc = dist*0.0005
-        acc = 5
+        acc = 3
         const t = vec.norm(vec.diff(sun.pos,ship.pos))
         const r = vec.norm(ship.right)
         const f = vec.norm(ship.forward)
         const ta = Math.PI/2
 
-        const _dt = acc*10
         const datr = ta - Math.acos(vec.dot(t,r))
-        vue.ship.a = datr*180/Math.PI
         if(Math.abs(datr) > th) {
-          ship.addRota(-datr*dt*_dt, f)
+          //ship.addRota(-datr*dt*4, f)
         }
-
         const datf = ta - Math.acos(vec.dot(t,f))
-        vue.ship.b = datf*180/Math.PI
         if(Math.abs(datf) > th) {
-          ship.addRota(datf*dt*_dt, r)
+          //ship.addRota(datf*dt*4, r)
         }
       }
 
@@ -381,14 +353,6 @@ export default {
     // start once all assets finished loading
     const render =  function() {
       // upload textures to gpu
-      shader.cubemap(gl, bg_prog.id, 0, bg_prog.locs["spacenoise"], {
-        px: assets.get("spacenoise"),
-        nx: assets.get("spacenoise"),
-        py: assets.get("spacenoise"),
-        ny: assets.get("spacenoise"),
-        pz: assets.get("spacenoise"),
-        nz: assets.get("spacenoise"),
-      })
       shader.texture(gl, int_prog.id, 1, int_prog.locs["samp_col"],
         assets.get("grass")
       )
@@ -420,23 +384,22 @@ export default {
       shader.texture(gl, hull_prog.id, 5, hull_prog.locs["samp_col"],
         assets.get("hull")
       )
-      shader.texture(gl, statics_prog.id, 4, statics_prog.locs["samp_col"],
-        assets.get("tree1")
-      )
       requestAnimationFrame(renderLoop)
     }
     assets.img("star", "img/nova.png",render)
 
     assets.img("int_hm", "img/int_hm.png",render)
     assets.img("int_hm_nm", "img/int_hm.nm.png",render)
-    assets.img("grass", "img/grass2.jpg", render)
+    assets.img("grass", "img/grass.png", render)
     assets.img("tree1", "img/tree1.png", render)
 
     assets.img("ship", "img/ship.png",render)
 
     assets.img("hull", "img/hull.png", render)
 
-    assets.img("spacenoise", "img/spacenoise.png", render)
+    assets.img("solid", "img/solid.png", render)
+    assets.img("hsv", "img/hsv.png", render)
+    assets.img("bayer", "img/bayer.png", render)
   },
 }
 </script>
@@ -462,6 +425,7 @@ canvas {
   position: absolute;
   top: 0;
   left: 0;
+  right: 0;
   color: whitesmoke;
   padding: 10px;
   background-color: #000d;

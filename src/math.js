@@ -1,5 +1,9 @@
 export default {
 
+  lerp(from, to, alpha, threshold) {
+    return this.lint(from, to, alpha, threshold)
+  },
+
   lint(from, to, alpha, threshold) {
     const diff = to - from
     return (Math.abs(diff) > threshold) ? alpha*diff : 0

@@ -58,18 +58,10 @@ out vec4 color;
 ${funcs}
 
 void main() {
-  vec3 n = abs(normalize(vert_wpos));
-  n = normalize(max(n, 0.00001));
-  float b = n.x + n.y + n.z;
-  n /= vec3(b,b,b);
-
-  vec4 xa = texture(samp_col, n.yz);
-  vec4 ya = texture(samp_col, n.xz);
-  vec4 za = texture(samp_col, n.xy);
-  vec4 tex = xa*n.x + ya*n.y + za*n.z;
+  vec4 tex = triplanar(vert_wpos, samp_col, 0.00001, 1.);
 
   float d = distance(vert_light,vert_pos);
-  float at = 2000.*vert_scale/(d*d);
+  float at = vert_scale*vert_scale/(d*d);
   float li = phong(vert_light, vert_pos, normalize(vert_n));
   color = vec4(at*li*tex.xyz, tex.a);
 }

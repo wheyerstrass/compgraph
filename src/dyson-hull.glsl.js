@@ -35,7 +35,7 @@ void main() {
 }
 `,
 
-  frag: (phong="") =>
+  frag: (funcs="") =>
 `#version 300 es
 
 precision mediump float;
@@ -51,21 +51,12 @@ uniform sampler2D samp_col;
 
 out vec4 color;
 
-${phong}
+${funcs}
 
 void main() {
-  vec3 coords = vert_uv;
-  vec3 n = abs(normalize(vert_uv));
-  n = normalize(max(n, 0.00001));
-  float b = n.x + n.y + n.z;
-  n /= vec3(b,b,b);
+  vec4 tex = triplanar(vert_uv, samp_col, 0.00001, 1.);
 
-  vec4 xa = texture(samp_col, 2.*n.yz);
-  vec4 ya = texture(samp_col, 2.*n.xz);
-  vec4 za = texture(samp_col, 2.*n.xy);
-  vec4 tex = xa*n.x + ya*n.y + za*n.z;
-
-  color = vec4(0.1*tex.xyz, tex.a);
+  color = vec4(0.2*tex.xyz, tex.a);
   if(vert_uv.z > 0.92)
     color.a = 0.0;
 }

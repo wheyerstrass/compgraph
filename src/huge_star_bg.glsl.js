@@ -4,11 +4,6 @@ export default {
 
 precision mediump float;
 
-in vec3 pos;
-in vec2 uv;
-
-uniform float time;
-
 uniform mat4 P;
 uniform mat4 cam_trans;
 uniform mat4 cam_rota;
@@ -17,17 +12,17 @@ uniform mat4 obj_trans;
 uniform mat4 obj_rota;
 uniform mat4 obj_scale;
 
-out vec3 vert_pos;
-out vec2 vert_uv;
+in vec2 pos;
+
+out vec3 v_pos;
 
 void main() {
   mat4 M = obj_trans*obj_rota*obj_scale;
-  mat4 V = cam_rota*cam_trans;
+  mat4 V = cam_rota;
   mat4 VM = V * M;
 
-  vert_uv = uv;
-  vert_pos = (VM * vec4(pos, 1.0)).xyz;
-  gl_Position = P * vec4(vert_pos, 1.0);
+  v_pos = vec3(pos,0);
+  gl_Position = P * VM * vec4(v_pos, 1.0);
 }
 `,
 
@@ -36,22 +31,21 @@ void main() {
 
 precision mediump float;
 
-uniform vec2 res;
 uniform float time;
-
-in vec3 vert_pos;
-in vec2 vert_uv;
-
 uniform sampler2D samp_col;
-uniform sampler2D samp_col2;
+
+in vec3 v_pos;
 
 out vec4 color;
 
 void main() {
-  float d = distance(vert_uv, vec2(.5,.5));
-  vec4 sun = vec4(0.25, 0.2, 1., 0.01) / d;
-  color = sun;
-  color.a = clamp(color.a, 0., 1.0);
+
+  float d = distance(v_pos.xy,vec2(0));
+  vec4 c = vec4(1.0,0.5,0.4,0.001)/d;
+  vec4 b = vec4(0,0,0,1.0);
+  vec4 cb = c.rgba*c.a + b.rgba*b.a;
+  vec4 tex = texture(samp_col, 8.0*v_pos.xy);
+  color = vec4(cb);
 }
 `
 }

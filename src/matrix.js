@@ -168,5 +168,9 @@ export default {
       a30*b02 + a31*b12 + a32*b22 + a33*b32,
       a30*b03 + a31*b13 + a32*b23 + a33*b33,
     ]
+  },
+
+  multiprod: function(...M) {
+    return M.reduce((all,m) => this.prod(all,m))
   }
 }

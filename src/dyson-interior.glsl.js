@@ -40,7 +40,7 @@ void main() {
   vert_lnorm = (V * vec4(texture(samp_hm_nm, pos).xyz, 0.0)).xyz;
 
   vec3 hm = texture(samp_hm,pos).xyz;
-  float disp = 0.1*(hm.r+hm.g+hm.b);
+  float disp = 0.1*(hm.r+hm.g+hm.b)-0.1;
   v_h = disp;
   if(pos.z > 0.8)
     disp = 0.0;
@@ -80,24 +80,14 @@ void main() {
   float li = phong(vert_light, vert_pos, vert_lnorm);
 
   // triplanar mapping
-  vec3 coords = vert_uv;
-  vec3 n = abs(normalize(vert_uv));
-  n = normalize(max(n, 0.00001));
-  float b = n.x + n.y + n.z;
-  n /= vec3(b,b,b);
-
-  float s = 0.02;
-  vec4 xa = texture(samp_col, s*vert_scale*coords.yz);
-  vec4 ya = texture(samp_col, s*vert_scale*coords.xz);
-  vec4 za = texture(samp_col, s*vert_scale*coords.xy);
-  vec4 tex = xa*n.x + ya*n.y + za*n.z;
+  vec4 tex = triplanar(vert_uv,samp_col,0.00001,0.02*vert_scale);
 
   color = tex;
   vec3 cam_pos = vec3(cam_trans[0][3], cam_trans[1][3], cam_trans[2][3]);
   float l = distance(cam_pos,vert_pos);
   vec3 raydir = normalize(vert_pos-cam_pos);
   vec4 f = vec4(fog(color.xyz, l, 0.0002), 1.0 );
-  color = vec4(li*f.xyz, f.a);
+  color = vec4(1.5*li*f.xyz, f.a);
   if(vert_uv.z > 0.85)
     color.a = 0.0;
 }
