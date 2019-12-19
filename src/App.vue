@@ -26,6 +26,7 @@ import hullp from "@/dyson-hull.glsl.js"
 import tubep from "@/dyson-port.glsl.js"
 import shipp from "@/ship.glsl.js"
 import starsp from "@/stars.glsl.js"
+import nebulap from "@/nebula.glsl.js"
 
 /* glsl functions */
 import fogp from "@/fog.glsl.js"
@@ -95,7 +96,7 @@ export default {
     let cam = camera(gl, canvas.clientWidth/canvas.clientHeight,1)
     cam.orbitControls(ship, 2)
     
-    let acc = 10
+    let acc = 0.1
     input.keydown({
       "w": () => (ship.vel[2] = 1*acc),
       "s": () => (ship.vel[2] = -1*acc),
@@ -194,7 +195,7 @@ export default {
       "P", "cam_rota", "cam_trans"
     ])
     const _rand = Math.random
-    const n = 1000
+    let n = 2000
     let _attribs = [{
       name: "pos", stride: 2, div: 0, data: [
         -1,1, 1,1, 1,-1,
@@ -203,38 +204,83 @@ export default {
     }, {
       name: "cam_pos", stride: 3, div: n, data: [...cam.pos]
     }]
-
     let _offs = []
     for(let i=0; i<n; ++i) {
       const phi = math.lerp(0, 2*Math.PI, _rand(), 1)
       const theta = math.lerp(0, Math.PI, _rand(), 1)
-      _offs.push(...math.polar3(10,phi,theta))
+      _offs.push(...math.polar3(100,phi,theta))
     }
     _attribs.push({ name: "offs", stride: 3, div: 1, data: _offs })
-
     let _scale = []
     for(let i=0; i<n; ++i) {
       const s = math.lerp(1, 7, _rand(), 1)
       _scale.push(s)
     }
     _attribs.push({ name: "scale", stride: 1, div: 1, data: _scale })
-
     let _col = []
+    for(let i=0; i<n; ++i) {
+      _col.push(1-_rand()*0.5, 1-_rand()*0.5, 1-_rand()*0.5)
+    }
+    _attribs.push({ name: "col", stride: 3, div: 1, data: _col })
+    let stars = meshes.staticInstanced(gl, stars_prog.id, _attribs, 6, n)
+    comps.dummy(stars)
+    stars_prog.objs.push(stars)
+    /*
+     * nebulas
+     */
+    let nebulas_prog = shader.prog(gl, nebulap.vert(), nebulap.frag(), [
+      "P", "cam_rota", "cam_trans",
+      "samp_col", "samp_col2"
+    ])
+    n = 50
+    _attribs = [{
+      name: "pos", stride: 2, div: 0, data: [
+        -1,1, 1,1, 1,-1,
+        -1,1, 1,-1, -1,-1,
+      ]
+    }, {
+      name: "cam_pos", stride: 3, div: n, data: [...cam.pos]
+    }]
+    _scale = []
+    for(let i=0; i<n; ++i) {
+      const s = math.lerp(4, 7, _rand(), 1)
+      _scale.push(s)
+    }
+    _attribs.push({ name: "scale", stride: 1, div: 1, data: _scale })
+    _offs = []
+    for(let i=0; i<n; ++i) {
+      const phi = math.lerp(0, 2*Math.PI, _rand(), 1)
+      const theta = math.lerp(0, Math.PI, _rand(), 1)
+      _offs.push(...math.polar3(10+_scale[i],phi,theta))
+    }
+    _attribs.push({ name: "offs", stride: 3, div: 1, data: _offs })
+    _col = []
     for(let i=0; i<n; ++i) {
       _col.push(_rand(), _rand(), _rand())
     }
     _attribs.push({ name: "col", stride: 3, div: 1, data: _col })
-
-    let stars = meshes.staticInstanced(gl, stars_prog.id, _attribs, 6, n)
-    comps.dummy(stars)
-    stars_prog.objs.push(stars)
-
+    let _uvoff = []
+    for(let i=0; i<n; ++i) {
+      _uvoff.push(_rand(), _rand())
+    }
+    _attribs.push({ name: "uvt", stride: 2, div: 1, data: _uvoff })
+    let _uvs = []
+    for(let i=0; i<n; ++i) {
+      _uvs.push(0.5+0.1*_rand())
+    }
+    _attribs.push({ name: "uvs", stride: 1, div: 1, data: _uvs })
+    let nebulas = meshes.staticInstanced(gl, nebulas_prog.id, _attribs, 6, n)
+    comps.dummy(nebulas)
+    nebulas_prog.objs.push(nebulas)
+    gl.clear(gl.DEPTH_BUFFER_BIT)
+    gl.disable(gl.DEPTH_TEST)
 
     /*
      * progs
      */
     let progs = [
       stars_prog,
+      nebulas_prog,
       ship_prog,
       //tube_prog,
       //int_prog,
@@ -255,8 +301,6 @@ export default {
       }
     }
     const max_scale = 10000
-    ship.pos[2] = 8
-    ship.pos_t[2] = 8
     //ship.pos[2] = 0.76*max_scale
     //ship.pos_t[2] = 0.76*max_scale
     setScale(ship, 0.1)
@@ -290,7 +334,7 @@ export default {
         setScale(hull, 2*s)
       }
       if (dist < max_scale*0.4) {
-        acc = 3
+        //acc = 3
         const t = vec.norm(vec.diff(sun.pos,ship.pos))
         const r = vec.norm(ship.right)
         const f = vec.norm(ship.forward)
@@ -384,6 +428,12 @@ export default {
       shader.texture(gl, hull_prog.id, 5, hull_prog.locs["samp_col"],
         assets.get("hull")
       )
+      shader.texture(gl, nebulas_prog.id, 4, nebulas_prog.locs["samp_col"],
+        assets.get("solid")
+      )
+      shader.texture(gl, nebulas_prog.id, 11, nebulas_prog.locs["samp_col2"],
+        assets.get("cell")
+      )
       requestAnimationFrame(renderLoop)
     }
     assets.img("star", "img/nova.png",render)
@@ -398,9 +448,8 @@ export default {
     assets.img("hull", "img/hull.png", render)
 
     assets.img("solid", "img/solid.png", render)
-    assets.img("hsv", "img/hsv.png", render)
-    assets.img("bayer", "img/bayer.png", render)
-  },
+    assets.img("cell", "img/cell.png", render)
+  }
 }
 </script>
 

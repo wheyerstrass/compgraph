@@ -55,10 +55,10 @@ out vec4 color;
 void main() {
 
   float d = distance(v_pos.xy,vec2(0));
-  vec4 c = vec4(0.8*v_col, 0.00001*v_scale)/d;
+  vec4 c = vec4(v_col, 0.001*v_scale)/d;
   vec4 b = vec4(0,0,0,1.0);
   vec4 cb = c.rgba*c.a + b.rgba*b.a;
-  color = vec4(cb);
+  color = cb;
 }
 `
 }
