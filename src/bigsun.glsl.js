@@ -51,6 +51,8 @@ void main() {
 
 precision mediump float;
 
+uniform float time;
+
 uniform sampler2D samp_col;
 uniform sampler2D samp_col2;
 
@@ -63,22 +65,24 @@ out vec4 color;
 
 void main() {
 
-  float d = distance(v_pos.xy,vec2(0));
-  vec4 c = vec4(v_col, 0.005)-(1.-clamp(d,0.,1.0));
-
-  vec4 b = vec4(0,0,0,1.0);
-  vec4 cb = c.rgba*c.a + b.rgba*b.a;
-
-  vec2 uv = 0.5*(v_pos.xy+1.);
-  vec4 noise1 = texture(samp_col, v_uvs*(uv+v_uvt));
-  vec4 noise2 = texture(samp_col2, v_uvs*(uv+v_uvt));
-
-  vec4 noise = mix(noise1,noise2,v_uvs);
-
-  //vec4 dodge = cb/(1.-noise);
-  //vec4 mult = noise*cb;
-  //color = mix(mult, dodge, 0.2);
-  color = noise*cb;
+    vec2 uv = v_pos.xy;
+              
+    vec3 col = v_col;
+      
+    float d = length(uv);
+    float t = 0.001*time;
+        
+    vec3 rays = 
+      col*1.5*(sin(10.*asin(uv.x/d)+t))-0.1 +
+      col*1.5*(sin(20.*asin(uv.x/d)+2.*t))-0.1 +
+      col*1.5*(sin(30.*asin(uv.x/d)+3.*t))-0.1 
+      ;
+    vec3 glow = col/d;
+    
+    vec3 fcol = 0.05*rays+0.5*glow;
+    fcol *= exp(-4.*d);
+    
+    color = vec4(0.5*fcol,1);
 }
 `
 }

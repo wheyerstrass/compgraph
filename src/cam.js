@@ -42,7 +42,7 @@ export default function(gl, ar, nc, fc=false) {
     cam.up = target.up
 
     cam.update = function(dt, th) {
-      cam.dist += lint(cam.dist, cam.dist_t, dt, th)
+      cam.dist += lint(cam.dist, cam.dist_t, 0.01*dt, th)
       cam.rota[0] += lint(cam.rota[0], cam.rota_t[0], dt, th)
       cam.rota[1] += lint(cam.rota[1], cam.rota_t[1], dt, th)
       

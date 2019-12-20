@@ -27,6 +27,7 @@ import tubep from "@/dyson-port.glsl.js"
 import shipp from "@/ship.glsl.js"
 import starsp from "@/stars.glsl.js"
 import nebulap from "@/nebula.glsl.js"
+import bstarp from "@/bigsun.glsl.js"
 
 /* glsl functions */
 import fogp from "@/fog.glsl.js"
@@ -76,7 +77,7 @@ export default {
     gl.enable(gl.DEPTH_TEST)
     gl.enable(gl.CULL_FACE)
     gl.enable(gl.BLEND)
-    gl.blendFunc(gl.ONE, gl.ONE)
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
     gl.clearColor(0.0, 0.0, 0.0, 1)
     const res = [gl.drawingBufferWidth, gl.drawingBufferHeight]
@@ -96,7 +97,7 @@ export default {
     let cam = camera(gl, canvas.clientWidth/canvas.clientHeight,1)
     cam.orbitControls(ship, 2)
     
-    let acc = 0.1
+    let acc = 10
     input.keydown({
       "w": () => (ship.vel[2] = 1*acc),
       "s": () => (ship.vel[2] = -1*acc),
@@ -142,6 +143,15 @@ export default {
       "obj_trans", "obj_rota", "obj_scale",
       "samp_col", "samp_col2"
     ])
+    sun_prog.preDraw = () => {
+      gl.blendFunc(gl.ONE, gl.ONE)
+      //gl.clear(gl.DEPTH_BUFFER_BIT)
+      //gl.disable(gl.DEPTH_TEST)
+    }
+    sun_prog.postDraw = () => {
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+      //gl.enable(gl.DEPTH_TEST)
+    }
     let sun = meshes.quad(gl, sun_prog.id)
     comps.billboard(sun, cam)
     sun_prog.objs.push(sun)
@@ -164,7 +174,7 @@ export default {
       "obj_trans", "obj_rota", "obj_scale",
       "samp_col", "samp_col2", "samp_norm", "samp_hm", "samp_hm_nm"
     ])
-    let interior = meshes.isosphereIn(gl, int_prog.id, 5)
+    let interior = meshes.isosphereIn(gl, int_prog.id, 6)
     comps.rigidbody(interior)
     int_prog.objs.push(interior)
     /*
@@ -194,6 +204,15 @@ export default {
     let stars_prog = shader.prog(gl, starsp.vert(), starsp.frag(), [
       "P", "cam_rota", "cam_trans"
     ])
+    stars_prog.preDraw = () => {
+      gl.blendFunc(gl.ONE, gl.ONE)
+      gl.clear(gl.DEPTH_BUFFER_BIT)
+      gl.disable(gl.DEPTH_TEST)
+    }
+    stars_prog.postDraw = () => {
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+      gl.enable(gl.DEPTH_TEST)
+    }
     const _rand = Math.random
     let n = 2000
     let _attribs = [{
@@ -232,6 +251,15 @@ export default {
       "P", "cam_rota", "cam_trans",
       "samp_col", "samp_col2"
     ])
+    nebulas_prog.preDraw = () => {
+      gl.blendFunc(gl.ONE, gl.ONE)
+      gl.clear(gl.DEPTH_BUFFER_BIT)
+      gl.disable(gl.DEPTH_TEST)
+    }
+    nebulas_prog.postDraw = () => {
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+      gl.enable(gl.DEPTH_TEST)
+    }
     n = 50
     _attribs = [{
       name: "pos", stride: 2, div: 0, data: [
@@ -243,8 +271,7 @@ export default {
     }]
     _scale = []
     for(let i=0; i<n; ++i) {
-      const s = math.lerp(4, 7, _rand(), 1)
-      _scale.push(s)
+      _scale.push(3)
     }
     _attribs.push({ name: "scale", stride: 1, div: 1, data: _scale })
     _offs = []
@@ -272,22 +299,54 @@ export default {
     let nebulas = meshes.staticInstanced(gl, nebulas_prog.id, _attribs, 6, n)
     comps.dummy(nebulas)
     nebulas_prog.objs.push(nebulas)
-    gl.clear(gl.DEPTH_BUFFER_BIT)
-    gl.disable(gl.DEPTH_TEST)
-
+    /*
+     * big star
+     */
+    let bstar_prog = shader.prog(gl, bstarp.vert(), bstarp.frag(), [
+      "time",
+      "P", "cam_rota", "cam_trans",
+      "samp_col", "samp_col2"
+    ])
+    bstar_prog.preDraw = () => {
+      gl.blendFunc(gl.ONE, gl.ONE)
+      gl.clear(gl.DEPTH_BUFFER_BIT)
+      gl.disable(gl.DEPTH_TEST)
+    }
+    bstar_prog.postDraw = () => {
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+      gl.enable(gl.DEPTH_TEST)
+    }
+    n = 1
+    _attribs = [{
+      name: "pos", stride: 2, div: 0, data: [
+        -1,1, 1,1, 1,-1,
+        -1,1, 1,-1, -1,-1,
+      ]
+    }, {
+      name: "cam_pos", stride: 3, div: n, data: [...cam.pos]
+    }, {
+      name: "scale", stride: 1, div: 1, data: [20]
+    }, {
+      name: "offs", stride: 3, div: 1, data: [250,0,-350]
+    }, {
+      name: "col", stride: 3, div: 1, data: [1,0.5,0.4]
+    }]
+    let bstar = meshes.staticInstanced(gl, bstar_prog.id, _attribs, 6, n)
+    comps.dummy(bstar)
+    bstar_prog.objs.push(bstar)
     /*
      * progs
      */
     let progs = [
       stars_prog,
       nebulas_prog,
+      bstar_prog,
       ship_prog,
-      //tube_prog,
-      //int_prog,
-      //intw_prog,
-      ////statics_prog,
-      //sun_prog,
-      //hull_prog
+      tube_prog,
+      int_prog,
+      intw_prog,
+      sun_prog,
+      hull_prog
     ]
 
     const setScale = (target, s) => {
@@ -301,8 +360,8 @@ export default {
       }
     }
     const max_scale = 10000
-    //ship.pos[2] = 0.76*max_scale
-    //ship.pos_t[2] = 0.76*max_scale
+    ship.pos[2] = 0.76*max_scale
+    ship.pos_t[2] = 0.76*max_scale
     setScale(ship, 0.1)
     tube.pos[2] = 1.6
     tube.pos_t[2] = 1.6
@@ -327,6 +386,7 @@ export default {
         setScale(hull, 2)
       }
       if (dist < max_scale && dist >= max_scale*0.75) {
+        cam.dist_t = 2
         setScale(sun, 1.5*s)
         setScale(interior, 1.5*s)
         setScale(water, 1.5*s)
@@ -334,7 +394,8 @@ export default {
         setScale(hull, 2*s)
       }
       if (dist < max_scale*0.4) {
-        //acc = 3
+        cam.dist_t = 4
+        acc = 3
         const t = vec.norm(vec.diff(sun.pos,ship.pos))
         const r = vec.norm(ship.right)
         const f = vec.norm(ship.forward)
@@ -342,11 +403,11 @@ export default {
 
         const datr = ta - Math.acos(vec.dot(t,r))
         if(Math.abs(datr) > th) {
-          //ship.addRota(-datr*dt*4, f)
+          ship.addRota(-datr*dt*4, f)
         }
         const datf = ta - Math.acos(vec.dot(t,f))
         if(Math.abs(datf) > th) {
-          //ship.addRota(datf*dt*4, r)
+          ship.addRota(datf*dt*4, r)
         }
       }
 
@@ -354,6 +415,8 @@ export default {
       for(let p=0; p<progs.length; ++p) {
         let prog = progs[p]
         gl.useProgram(prog.id)
+        /* pre-draw */
+        prog.preDraw()
         /*
          * push res */
         gl.uniform2fv(prog.locs["res"], res)
@@ -390,6 +453,7 @@ export default {
           obj.update(dt, th)
           obj.draw(data)
         }
+        prog.postDraw()
       }
       requestAnimationFrame(renderLoop)
     }
@@ -436,12 +500,9 @@ export default {
       )
       requestAnimationFrame(renderLoop)
     }
-    assets.img("star", "img/nova.png",render)
-
     assets.img("int_hm", "img/int_hm.png",render)
     assets.img("int_hm_nm", "img/int_hm.nm.png",render)
     assets.img("grass", "img/grass.png", render)
-    assets.img("tree1", "img/tree1.png", render)
 
     assets.img("ship", "img/ship.png",render)
 

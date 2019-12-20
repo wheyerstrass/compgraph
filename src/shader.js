@@ -20,7 +20,13 @@ export default {
     if (gl.getProgramParameter(p, gl.LINK_STATUS)) {
       let locs = {}
       uniforms.forEach(u => locs[u] = gl.getUniformLocation(p, u))
-      return { id: p, locs, objs: [] }
+      return {
+        id: p,
+        locs,
+        objs: [],
+        preDraw: ()=>{},
+        postDraw: ()=>{},
+      }
     }
     console.error(gl.getProgramInfoLog(p))
     gl.deleteProgram(p)

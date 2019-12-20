@@ -350,13 +350,10 @@ export default {
       draw: function({pos, rota, size}) {
         gl.useProgram(prog)
         gl.bindVertexArray(vao)
-        gl.clear(gl.DEPTH_BUFFER_BIT)
-        gl.disable(gl.DEPTH_TEST)
         gl.uniformMatrix4fv(pos.loc, false, pos.data)
         gl.uniformMatrix4fv(size.loc, false, size.data)
         gl.uniformMatrix4fv(rota.loc, false, rota.data)
         gl.drawArrays(gl.TRIANGLES, 0, 6*1)
-        gl.enable(gl.DEPTH_TEST)
       }
     }
   },
@@ -391,13 +388,10 @@ export default {
       draw: function({pos, rota, size}) {
         gl.useProgram(prog)
         gl.bindVertexArray(vao)
-        //gl.clear(gl.DEPTH_BUFFER_BIT)
-        //gl.disable(gl.DEPTH_TEST)
         gl.uniformMatrix4fv(pos.loc, false, pos.data)
         gl.uniformMatrix4fv(rota.loc, false, rota.data)
         gl.uniformMatrix4fv(size.loc, false, size.data)
         gl.drawArrays(gl.TRIANGLES, 0, 6*1)
-        //gl.enable(gl.DEPTH_TEST)
       }
     }
   },

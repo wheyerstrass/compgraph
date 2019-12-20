@@ -49,9 +49,9 @@ out vec4 color;
 
 void main() {
   float d = distance(vert_uv, vec2(.5,.5));
-  vec4 sun = vec4(0.25, 0.2, 1., 0.01) / d;
+  vec4 sun = vec4(0.9,0.6,0.0, 0.025) / d;
+  sun *= exp(-64.*d);
   color = sun;
-  color.a = clamp(color.a, 0., 1.0);
 }
 `
 }
