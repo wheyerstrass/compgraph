@@ -21,11 +21,11 @@ uniform samplerCube samp_hm_nm;
 
 out vec3 vert_uv;
 out vec3 vert_pos;
-out vec3 vert_norm;
 out vec3 vert_lnorm;
 out vec3 vert_light;
 out float vert_scale;
 out float v_h;
+out vec3 v_hm;
 
 void main() {
   mat4 M = obj_trans*obj_rota;
@@ -34,16 +34,17 @@ void main() {
 
   vert_uv = pos;
   vert_scale = obj_scale[0][0];
-  vert_light = (P*V * vec4(light, 0.0)).xyz;
+  vert_light = (VM * vec4(light, 0.0)).xyz;
 
-  vert_norm = (V * vec4(pos, 0.0)).xyz;
-  vert_lnorm = (V * vec4(texture(samp_hm_nm, pos).xyz, 0.0)).xyz;
+  vec3 _ln = 2.*texture(samp_hm_nm,pos).xyz-1.;
+  vert_lnorm = (VM * vec4(_ln, 0.0)).xyz;
 
   vec3 hm = texture(samp_hm,pos).xyz;
+  v_hm = hm;
   float disp = 0.1*(hm.r+hm.g+hm.b)-0.1;
-  v_h = disp;
-  if(pos.z > 0.8)
+  if(pos.z > 0.8) {
     disp = 0.0;
+  }
   
   vec3 disp_pos = vert_scale * (pos - 0.5*disp*normalize(pos));
   vert_pos = (VM * vec4(disp_pos, 1.0)).xyz;
@@ -58,11 +59,11 @@ precision mediump float;
 
 in vec3 vert_uv;
 in vec3 vert_pos;
-in vec3 vert_norm;
 in vec3 vert_lnorm;
 in vec3 vert_light;
 in float vert_scale;
 in float v_h;
+in vec3 v_hm;
 
 uniform float time;
 uniform mat4 cam_trans;
@@ -80,9 +81,11 @@ void main() {
   float li = phong(vert_light, vert_pos, vert_lnorm);
 
   // triplanar mapping
-  vec4 tex = triplanar(vert_uv,samp_col,0.00001,0.02*vert_scale);
+  vec4 tex = triplanar(vert_lnorm,samp_col,0.00001,0.05*vert_scale);
 
+  float h = clamp(v_hm.r, 0.,1.);
   color = tex;
+
   vec3 cam_pos = vec3(cam_trans[0][3], cam_trans[1][3], cam_trans[2][3]);
   float l = distance(cam_pos,vert_pos);
   vec3 raydir = normalize(vert_pos-cam_pos);

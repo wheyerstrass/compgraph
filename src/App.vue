@@ -145,12 +145,9 @@ export default {
     ])
     sun_prog.preDraw = () => {
       gl.blendFunc(gl.ONE, gl.ONE)
-      //gl.clear(gl.DEPTH_BUFFER_BIT)
-      //gl.disable(gl.DEPTH_TEST)
     }
     sun_prog.postDraw = () => {
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-      //gl.enable(gl.DEPTH_TEST)
     }
     let sun = meshes.quad(gl, sun_prog.id)
     comps.billboard(sun, cam)
@@ -389,7 +386,7 @@ export default {
         cam.dist_t = 2
         setScale(sun, 1.5*s)
         setScale(interior, 1.5*s)
-        setScale(water, 1.5*s)
+        setScale(water, 1.52*s)
         setScale(tube, s)
         setScale(hull, 2*s)
       }
