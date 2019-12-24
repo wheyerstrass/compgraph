@@ -51,15 +51,31 @@ void main() {
 
 precision mediump float;
 
-uniform sampler2D samp_col;
-uniform sampler2D samp_col2;
-
 in vec3 v_pos;
 in vec3 v_col;
 in vec2 v_uvt;
 in float v_uvs;
 
 out vec4 color;
+
+float hash(in vec2 p) {
+  vec2 _p = 50. * fract(p*0.3183099 + vec2(0.71,0.113));
+  return 2.* fract(_p.x*_p.y*(_p.x+_p.y)) - 1.;
+}
+
+float vnoise(in vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+
+  vec2 u = f*f*(3.0-2.0*f);
+
+  return mix(mix(hash(i + vec2(0.0,0.0)), 
+                hash(i + vec2(1.0,0.0)), u.x),
+            mix(hash(i + vec2(0.0,1.0)), 
+                hash(i + vec2(1.0,1.0)), u.x), u.y);
+}
+
+const mat2 m = mat2(1.6,1.2,-1.2,1.6);
 
 void main() {
 
@@ -70,15 +86,15 @@ void main() {
   vec4 cb = c.rgba*c.a + b.rgba*b.a;
 
   vec2 uv = 0.5*(v_pos.xy+1.);
-  vec4 noise1 = texture(samp_col, v_uvs*(uv+v_uvt));
-  vec4 noise2 = texture(samp_col2, v_uvs*(uv+v_uvt));
+  uv = 10.*v_uvs*(uv+v_uvt);
 
-  vec4 noise = mix(noise1,noise2,v_uvs);
+  float f = 0.5* vnoise(uv); uv = m*uv;
+  f += 0.25* vnoise(uv); uv = m*uv;
+  f += 0.125* vnoise(uv); uv = m*uv;
+  f += 0.0625* vnoise(uv); uv = m*uv;
+  f = 0.5 + 0.5*f;
 
-  //vec4 dodge = cb/(1.-noise);
-  //vec4 mult = noise*cb;
-  //color = mix(mult, dodge, 0.2);
-  color = noise*cb;
+  color = vec4(f*cb.xyz,cb.a);
 }
 `
 }

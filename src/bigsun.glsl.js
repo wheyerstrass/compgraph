@@ -75,8 +75,8 @@ void main() {
     vec3 rays = 
       col*1.5*(sin(10.*asin(uv.x/d)+t))-0.1 +
       col*1.5*(sin(20.*asin(uv.x/d)+2.*t))-0.1 +
-      col*1.5*(sin(30.*asin(uv.x/d)+3.*t))-0.1 
-      ;
+      col*1.5*(sin(30.*asin(uv.x/d)+3.*t))-0.1;
+
     vec3 glow = col/d;
     
     vec3 fcol = 0.05*rays+0.5*glow;

@@ -81,10 +81,14 @@ void main() {
   float li = phong(vert_light, vert_pos, vert_lnorm);
 
   // triplanar mapping
-  vec4 tex = triplanar(vert_lnorm,samp_col,0.00001,0.05*vert_scale);
+  vec4 tex = triplanar(-vert_uv,samp_col,0.00001,0.05*vert_scale);
+  vec4 tex2 = triplanar(-vert_uv,samp_col2,0.00001,0.05*vert_scale);
 
   float h = clamp(v_hm.r, 0.,1.);
+  float ah = (atan(h)+1.6)/3.2;
   color = tex;
+  if(h > 0.5)
+    color = mix(tex,tex2,ah);
 
   vec3 cam_pos = vec3(cam_trans[0][3], cam_trans[1][3], cam_trans[2][3]);
   float l = distance(cam_pos,vert_pos);

@@ -43,8 +43,8 @@ export default function(gl, ar, nc, fc=false) {
 
     cam.update = function(dt, th) {
       cam.dist += lint(cam.dist, cam.dist_t, 0.01*dt, th)
-      cam.rota[0] += lint(cam.rota[0], cam.rota_t[0], dt, th)
-      cam.rota[1] += lint(cam.rota[1], cam.rota_t[1], dt, th)
+      cam.rota[0] += lint(cam.rota[0], cam.rota_t[0], 0.1*dt, th)
+      cam.rota[1] += lint(cam.rota[1], cam.rota_t[1], 0.1*dt, th)
       
       const {right,up,forward} = target
       const rel_pos = vec3.scale(cam.dist, vec3.norm([0,1,-5]))

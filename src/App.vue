@@ -290,7 +290,7 @@ export default {
     _attribs.push({ name: "uvt", stride: 2, div: 1, data: _uvoff })
     let _uvs = []
     for(let i=0; i<n; ++i) {
-      _uvs.push(0.5+0.1*_rand())
+      _uvs.push(_rand())
     }
     _attribs.push({ name: "uvs", stride: 1, div: 1, data: _uvs })
     let nebulas = meshes.staticInstanced(gl, nebulas_prog.id, _attribs, 6, n)
@@ -489,12 +489,6 @@ export default {
       shader.texture(gl, hull_prog.id, 5, hull_prog.locs["samp_col"],
         assets.get("hull")
       )
-      shader.texture(gl, nebulas_prog.id, 4, nebulas_prog.locs["samp_col"],
-        assets.get("solid")
-      )
-      shader.texture(gl, nebulas_prog.id, 11, nebulas_prog.locs["samp_col2"],
-        assets.get("cell")
-      )
       requestAnimationFrame(renderLoop)
     }
     assets.img("int_hm", "img/int_hm.png",render)
@@ -504,9 +498,6 @@ export default {
     assets.img("ship", "img/ship.png",render)
 
     assets.img("hull", "img/hull.png", render)
-
-    assets.img("solid", "img/solid.png", render)
-    assets.img("cell", "img/cell.png", render)
   }
 }
 </script>
