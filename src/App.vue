@@ -43,8 +43,8 @@ export default {
   name: 'home',
   data() {
     return {
-      w: 1024,
-      h: 576,
+      w: 512,
+      h: 288,
       ship: {pos: [-1,-1,-1], pos_t: [-1,-1,-1], distToNull: -1, a:0,b:0}
     }
   },
@@ -171,7 +171,7 @@ export default {
       "obj_trans", "obj_rota", "obj_scale",
       "samp_col", "samp_col2", "samp_norm", "samp_hm", "samp_hm_nm"
     ])
-    let interior = meshes.isosphereIn(gl, int_prog.id, 6)
+    let interior = meshes.isosphereIn(gl, int_prog.id, 5)
     comps.rigidbody(interior)
     int_prog.objs.push(interior)
     /*
@@ -257,7 +257,7 @@ export default {
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
       gl.enable(gl.DEPTH_TEST)
     }
-    n = 50
+    n = 25
     _attribs = [{
       name: "pos", stride: 2, div: 0, data: [
         -1,1, 1,1, 1,-1,
@@ -499,7 +499,7 @@ export default {
     }
     assets.img("int_hm", "img/int_hm.png",render)
     assets.img("int_hm_nm", "img/int_hm.nm.png",render)
-    assets.img("grass", "img/grass.png", render)
+    assets.img("grass", "img/sand.png", render)
 
     assets.img("ship", "img/ship.png",render)
 

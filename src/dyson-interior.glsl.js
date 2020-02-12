@@ -81,7 +81,7 @@ void main() {
   float li = phong(vert_light, vert_pos, vert_lnorm);
 
   // triplanar mapping
-  vec4 tex = triplanar(vert_lnorm,samp_col,0.00001,0.05*vert_scale);
+  vec4 tex = triplanar(vert_uv, samp_col,0.00001,0.5*vert_scale);
 
   float h = clamp(v_hm.r, 0.,1.);
   color = tex;

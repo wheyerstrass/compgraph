@@ -58,12 +58,12 @@ out vec4 color;
 ${funcs}
 
 void main() {
-  vec4 tex = triplanar(vert_wpos, samp_col, 0.00001, 1.);
+  vec4 tex = triplanar(vert_wpos, samp_col, 0.0001, 1.);
 
   float d = distance(vert_light,vert_pos);
   float at = vert_scale*vert_scale/(d*d);
   float li = phong(vert_light, vert_pos, normalize(vert_n));
-  color = vec4(at*li*tex.xyz, tex.a);
+  color = vec4(0.2*at*tex.xyz, tex.a);
 }
 `
 }
